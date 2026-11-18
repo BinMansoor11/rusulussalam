@@ -43,6 +43,10 @@ export function Confirmation({ name, children }: { name: string; children: React
   );
 }
 
-export function ArchArt({ className }: { className?: string }) {
-  return <div aria-hidden="true" className={`arch-art ${className ?? ""}`}><div className="arch-art__opening" /></div>;
+export function GeometricPattern({ className }: { className?: string }) {
+  return (
+    <div aria-hidden="true" className={`arch-art ${className ?? ""}`}>
+      <div className="arch-art__medallion" />
+    </div>
+  );
 }

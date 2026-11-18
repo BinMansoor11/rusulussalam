@@ -49,7 +49,7 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/dashb
     <main lang={language} dir={language === "ur" ? "rtl" : "ltr"}
       className="workspace">
       <PageHeading title={copy.title} description={
-        <span className="flex flex-wrap items-center gap-2">{copy.publicId} <bdi className="rounded-lg border border-line bg-surface px-2 py-1 font-mono text-sm text-foreground">{profile.public_id}</bdi></span>
+        <span className="flex flex-wrap items-center gap-2">{copy.publicId} <bdi className="rounded-md border border-line bg-surface px-2 py-1 font-mono text-sm text-foreground">{profile.public_id}</bdi></span>
       } actions={
         <div className="flex flex-wrap items-end gap-3">
           <form action={setAdminLanguage} className="flex flex-wrap items-end gap-2">
@@ -178,7 +178,7 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/dashb
           <fieldset className="flex flex-wrap gap-4">
             <legend className="mb-2 text-sm font-medium">{copy.languages}</legend>
             {(["en", "ur"] as const).map(option => (
-              <label key={option} className="flex min-h-11 items-center gap-2 rounded-xl border border-line bg-background px-3 text-sm">
+              <label key={option} className="flex min-h-11 items-center gap-2 rounded-control border border-line bg-background px-3 text-sm">
                 <input type="checkbox" name="supportedLanguages" value={option} className="size-4 accent-brand" />
                 <span lang={option}>{languageNames[option]}</span>
               </label>

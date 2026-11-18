@@ -50,7 +50,7 @@ export function ChatReport({ id, locale, online, refresh }: {
   }
 
   return (
-    <details className="rounded-xl border border-line bg-background px-3 sm:px-4">
+    <details className="rounded-control border border-line bg-background px-3 sm:px-4">
       <summary className="min-h-11 cursor-pointer py-2.5 text-sm font-semibold text-brand">{copy.report}</summary>
       <p className="mt-3 text-sm text-muted">{copy.reportNotice}</p>
       <form method="post" onSubmit={report} className="my-4 grid max-w-lg gap-3">

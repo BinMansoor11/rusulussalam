@@ -126,7 +126,7 @@ export function Chat({ id, initialStatus, role, publicId, locale, assigned }: {
           {chat.loading ? <Notice>{copy.loading}</Notice> :
             !chat.messages.length && !chat.syncError && <EmptyState>{copy.empty}</EmptyState>}
           <div ref={log} tabIndex={chat.messages.length ? 0 : undefined} role="log" aria-labelledby="messages-heading"
-            className={`max-h-[min(40dvh,28rem)] overflow-y-auto overscroll-contain rounded-2xl bg-[#f0f2e9] sm:max-h-[min(42dvh,30rem)] ${chat.messages.length ? "border border-line p-2.5 sm:p-4" : ""}`}
+            className={`max-h-[min(40dvh,28rem)] overflow-y-auto overscroll-contain rounded-card bg-[#f0f2e9] sm:max-h-[min(42dvh,30rem)] ${chat.messages.length ? "border border-line p-2.5 sm:p-4" : ""}`}
             onScroll={event => {
               const node = event.currentTarget;
               followLatest.current = node.scrollHeight - node.scrollTop - node.clientHeight < 60;
@@ -136,7 +136,7 @@ export function Chat({ id, initialStatus, role, publicId, locale, assigned }: {
                 const mine = message.role === role && message.publicId === publicId;
                 return (
                   <li key={message.id} className={mine ? "flex justify-end" : "flex justify-start"}>
-                    <div className={`min-w-0 max-w-[91%] rounded-2xl px-3 py-2.5 sm:max-w-[78%] sm:px-4 ${mine ? "rounded-ee-sm bg-brand text-white" : "rounded-es-sm border border-line bg-surface"}`}>
+                    <div className={`min-w-0 max-w-[91%] rounded-card px-3 py-2.5 sm:max-w-[78%] sm:px-4 ${mine ? "rounded-ee-sm bg-brand text-white" : "rounded-es-sm border border-line bg-surface"}`}>
                       <p className="flex flex-wrap items-center gap-x-1 text-xs opacity-90">
                         <bdi>{message.publicId}</bdi>
                         {" · "}<time dateTime={message.createdAt}>{timeFormat.format(new Date(message.createdAt))}</time>
@@ -151,7 +151,7 @@ export function Chat({ id, initialStatus, role, publicId, locale, assigned }: {
         </>
       )}
       {status === "active" ? (
-        <form method="post" onSubmit={send} className="rounded-2xl border border-line bg-background p-3 sm:p-4" aria-busy={sending}>
+        <form method="post" onSubmit={send} className="rounded-card border border-line bg-background p-3 sm:p-4" aria-busy={sending}>
           <label htmlFor="message" className="block text-sm font-medium">{copy.message}</label>
           <textarea id="message" dir="auto" required rows={3}
             className="field resize-y" value={draft} onChange={event => setDraft(event.target.value)}

@@ -41,7 +41,7 @@ export function AuthForm({ mode, language }: { mode: "login" | "register"; langu
   );
   if (!state.notice) return form;
   return (
-    <div className="mt-6 rounded-2xl border border-line bg-sage p-5">
+    <div className="mt-6 rounded-card border border-line bg-sage p-5">
       <h2 className="text-xl font-semibold text-brand">{copy.verify}</h2>
       <p role="status" className="mt-2 text-sm leading-relaxed text-muted">{copy.verification}</p>
       <details className="mt-3">

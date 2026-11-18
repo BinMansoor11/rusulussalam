@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { isSignedIn } from "@/lib/auth";
-import { ArchArt, Card } from "./ui/primitives";
+import { Card, GeometricPattern } from "./ui/primitives";
 import { getSiteLanguage } from "./ui/locale";
 
 const content = {
@@ -39,7 +39,7 @@ export default async function Home() {
   const copy = content[language];
   return (
     <main className="site-shell space-y-12 pb-14 pt-7 sm:space-y-16 sm:pb-20 sm:pt-10">
-      <section className="grid items-center gap-7 rounded-[2rem] border border-line bg-surface p-4 sm:p-7 lg:grid-cols-[1.05fr_1fr] lg:gap-10">
+      <section className="grid items-center gap-7 rounded-shell border border-line bg-surface p-4 sm:p-7 lg:grid-cols-[1.05fr_1fr] lg:gap-10">
         <div className="px-2 py-4 sm:px-4 lg:py-9">
           <h1 className="display-heading max-w-[12ch] text-[clamp(2.8rem,7vw,5.6rem)] leading-[.98] text-brand">
             {copy.title}
@@ -53,7 +53,7 @@ export default async function Home() {
             {!signedIn && <Link href="/login" className="button-secondary min-h-12">{copy.signIn}</Link>}
           </div>
         </div>
-        <ArchArt className="sm:min-h-[23rem] lg:min-h-[29rem]" />
+        <GeometricPattern className="sm:min-h-[23rem] lg:min-h-[29rem]" />
       </section>
       <section id="how-it-works" className="scroll-mt-5" aria-labelledby="how-heading">
         <h2 id="how-heading" className="display-heading text-3xl text-brand sm:text-5xl">{copy.how}</h2>

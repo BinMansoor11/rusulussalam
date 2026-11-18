@@ -14,6 +14,9 @@
 }
 
 @theme inline {
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-shell: 16px;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-brand: var(--brand);
@@ -41,12 +44,12 @@ html[lang="ur"] body, [lang="ur"] {
 
 @layer components {
   .brand-mark {
+    @apply rounded-control;
     display: grid;
     width: 2.5rem;
     aspect-ratio: 1;
     flex: none;
     place-items: center;
-    border-radius: 0.85rem;
     background: var(--brand);
     color: #e5ce94;
   }
@@ -61,25 +64,25 @@ html[lang="ur"] body, [lang="ur"] {
   }
 
   .panel {
-    @apply min-w-0 rounded-[1.5rem] border border-line bg-surface p-5 sm:p-7;
+    @apply min-w-0 rounded-card border border-line bg-surface p-5 sm:p-7;
     box-shadow: 0 14px 34px -29px #174c3a70;
   }
 
   .button {
-    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-xl border border-transparent bg-brand px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#103829] disabled:cursor-not-allowed disabled:opacity-65;
+    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-control border border-transparent bg-brand px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#103829] disabled:cursor-not-allowed disabled:opacity-65;
     box-shadow: 0 7px 15px -10px #0b3429;
   }
 
   .button-secondary {
-    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-xl border border-[#bfcac0] bg-surface px-4 py-2 text-center text-sm font-semibold text-brand transition-colors hover:bg-sage disabled:opacity-65;
+    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-control border border-[#bfcac0] bg-surface px-4 py-2 text-center text-sm font-semibold text-brand transition-colors hover:bg-sage disabled:opacity-65;
   }
 
   .button-danger {
-    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-xl border border-[#e1bdb6] bg-[#fff8f4] px-4 py-2 text-center text-sm font-semibold text-[#812e29] transition-colors hover:bg-[#f8e6e1] disabled:opacity-65;
+    @apply inline-flex min-h-11 max-w-full items-center justify-center rounded-control border border-[#e1bdb6] bg-[#fff8f4] px-4 py-2 text-center text-sm font-semibold text-[#812e29] transition-colors hover:bg-[#f8e6e1] disabled:opacity-65;
   }
 
   .field {
-    @apply mt-1.5 block min-h-12 w-full min-w-0 rounded-xl border border-[#a4b1a3] bg-white px-3.5 py-2.5 text-base text-foreground;
+    @apply mt-1.5 block min-h-12 w-full min-w-0 rounded-control border border-[#a4b1a3] bg-white px-3.5 py-2.5 text-base text-foreground;
   }
 
   select.field {
@@ -119,16 +122,16 @@ html[lang="ur"] body, [lang="ur"] {
   }
 
   .workspace-heading {
-    @apply flex flex-wrap items-start justify-between gap-4 rounded-[1.6rem] border border-line bg-sage p-5 sm:p-8;
+    @apply flex flex-wrap items-start justify-between gap-4 rounded-shell border border-line bg-sage p-5 sm:p-8;
     background-image: radial-gradient(ellipse at top right, #fffdf7 0%, transparent 65%);
   }
 
   .inset-list > li {
-    @apply min-w-0 rounded-xl border border-line bg-[#f8faf5] p-3.5 sm:p-4;
+    @apply min-w-0 rounded-control border border-line bg-[#f8faf5] p-3.5 sm:p-4;
   }
 
   .empty-state {
-    @apply mt-4 rounded-xl border border-dashed border-[#b7c4b5] bg-[#f5f7f0] px-4 py-5 text-sm text-muted;
+    @apply mt-4 rounded-control border border-dashed border-[#b7c4b5] bg-[#f5f7f0] px-4 py-5 text-sm text-muted;
   }
 
   .status-pill {
@@ -149,7 +152,7 @@ html[lang="ur"] body, [lang="ur"] {
   .status-pill[data-tone="danger"] { @apply border-[#e2bdb6] bg-[#faebe6] text-[#812e29]; }
 
   .notice {
-    @apply rounded-xl border border-line bg-sage px-4 py-3 text-sm text-brand;
+    @apply rounded-control border border-line bg-sage px-4 py-3 text-sm text-brand;
   }
 
   .notice[role="alert"] {
@@ -157,64 +160,53 @@ html[lang="ur"] body, [lang="ur"] {
   }
 
   .confirmation {
-    @apply flex min-h-11 items-start gap-3 rounded-xl border border-line bg-background p-3 text-sm;
+    @apply flex min-h-11 items-start gap-3 rounded-control border border-line bg-background p-3 text-sm;
   }
 
   .arch-art {
+    @apply grid min-h-52 place-items-center overflow-hidden rounded-card;
     position: relative;
     isolation: isolate;
-    display: grid;
-    min-height: 19rem;
-    overflow: hidden;
-    place-items: center;
-    border-radius: 1.8rem;
     background:
-      repeating-linear-gradient(45deg, transparent 0 26px, #e5ce9411 27px 28px, transparent 29px 55px),
-      repeating-linear-gradient(-45deg, transparent 0 26px, #e5ce9411 27px 28px, transparent 29px 55px),
-      radial-gradient(ellipse at 50% 68%, #2e624d, transparent 70%),
-      #153e32;
+      radial-gradient(ellipse at center, transparent 16%, #0e3027b3 100%),
+      repeating-conic-gradient(from 22.5deg, #e5ce942b 0deg 1.5deg, transparent 1.5deg 45deg) center / 72px 72px,
+      repeating-conic-gradient(from 22.5deg, #e5ce941a 0deg 1.5deg, transparent 1.5deg 45deg) calc(50% + 36px) calc(50% + 36px) / 72px 72px,
+      radial-gradient(ellipse at center, #32624e, #153e32 76%);
   }
 
   .arch-art::before {
+    @apply rounded-control;
     content: "";
     position: absolute;
     inset: 0.85rem;
     border: 1px solid #b89b6077;
-    border-radius: 1.25rem;
   }
 
-  .arch-art__opening {
+  .arch-art__medallion {
     position: relative;
-    width: min(66%, 17rem);
-    height: 80%;
-    align-self: end;
-    overflow: hidden;
-    border: 1px solid #e5ce94a0;
-    border-bottom: 0;
-    border-radius: 50% 50% 0 0 / 44% 44% 0 0;
-    background: linear-gradient(#f3dca2, #f6e6bf 57%, #d9d7b9 58%, #a5b297);
-    box-shadow: 0 0 0 10px #ceb98024, 0 0 0 11px #e5ce9469;
-  }
-
-  .arch-art__opening::before {
-    content: "";
-    position: absolute;
-    inset: 20% auto auto 50%;
-    width: 26%;
+    width: min(36%, 8rem);
     aspect-ratio: 1;
-    border-radius: 50%;
-    background: #fff4d6;
-    box-shadow: 0 0 38px #fff0c7d9;
-    transform: translateX(-50%);
+    border: 1px solid #e5ce94b3;
+    background: #174c3ab8;
+    box-shadow: inset 0 0 0 5px #174c3a, inset 0 0 0 6px #b89b6077;
   }
 
-  .arch-art__opening::after {
+  .arch-art__medallion::before,
+  .arch-art__medallion::after {
     content: "";
     position: absolute;
-    inset: 52% -22% -20%;
-    border-radius: 55% 42% 0 0;
-    background: repeating-radial-gradient(ellipse at 50% 110%, #254d4090 0 9px, transparent 10px 27px),
-      linear-gradient(135deg, #93a98b, #507e65 60%, #325b4a);
+    border: 1px solid #e5ce94b3;
+    transform: rotate(45deg);
+  }
+
+  .arch-art__medallion::before {
+    inset: 0;
+    box-shadow: inset 0 0 0 5px #174c3a, inset 0 0 0 6px #b89b6077;
+  }
+
+  .arch-art__medallion::after {
+    inset: 38%;
+    background: var(--gold);
   }
 
   .auth-illustration {

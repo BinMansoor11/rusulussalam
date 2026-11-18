@@ -65,14 +65,14 @@ export async function VolunteerDashboard({ client, publicId, language, notice }:
           <h2 className="display-heading text-2xl text-brand">{copy.settings}</h2>
           {!settings ? <Notice className="mt-3" error>{copy.settingsFailed}</Notice> : (
             <form action={saveVolunteerSettings} key={JSON.stringify(settings)} className="mt-4 space-y-4">
-              <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-line bg-sage p-3 text-sm font-semibold">
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-control border border-line bg-sage p-3 text-sm font-semibold">
                 <input type="checkbox" role="switch" name="availability" defaultChecked={settings.available} className="size-5 shrink-0 accent-brand" />
                 {copy.toggle}
               </label>
               <fieldset>
                 <legend className="text-sm font-medium">{copy.languages}</legend>
                 {languages.map(option => (
-                  <label key={option} className="mt-2 flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-line bg-background px-3 text-sm">
+                  <label key={option} className="mt-2 flex min-h-11 cursor-pointer items-center gap-3 rounded-control border border-line bg-background px-3 text-sm">
                     <input type="checkbox" name="supportedLanguages" value={option}
                       defaultChecked={settings.languages.includes(option)} className="size-5 accent-brand" />
                     <span lang={option}>{languageNames[option]}</span>
@@ -89,7 +89,7 @@ export async function VolunteerDashboard({ client, publicId, language, notice }:
         <section className="panel">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="display-heading text-2xl text-brand">{copy.active}</h2>
-            {active && <span className="rounded-lg bg-background px-2 text-sm" role="status">{active.length}</span>}
+            {active && <span className="rounded-md bg-background px-2 text-sm" role="status">{active.length}</span>}
           </div>
           {!active ? <Notice className="mt-3" error>{copy.activeFailed}</Notice> :
             active.length === 0 ? <EmptyState>{copy.activeEmpty}</EmptyState> : (
