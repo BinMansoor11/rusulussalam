@@ -1,0 +1,11 @@
+/*
+!/src
+!/public
+!/scripts
+!/package.json
+!/pnpm-lock.yaml
+!/pnpm-workspace.yaml
+!/next.config.ts
+!/tsconfig.json
+!/eslint.config.mjs
+!/vercel.json

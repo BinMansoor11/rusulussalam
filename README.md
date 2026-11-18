@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+﻿# Human Connection
 
-## Getting Started
+Human Connection is a peer-listening application built with Next.js and Supabase.
 
-First, run the development server:
+## Local development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Install the project's dependencies with `pnpm install`.
+2. Start the disposable Supabase stack using the [integration runbook](supabase/README.md).
+3. Copy `.env.example` to `.env.local`. Set `NEXT_PUBLIC_SUPABASE_URL` to the local API URL and set the publishable key or legacy anonymous key from the local stack. Set `AUTH_SITE_URL` to the exact origin you use in the browser.
+4. Run `pnpm dev` and open `http://localhost:3000`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`/register` and `/login` lead to the protected `/dashboard`. The navigation language switch remembers the interface language in the current browser. Visitors can also save their preferred conversation language.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Try the volunteer workflow locally
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Use two browser profiles or a regular and a private window. Sign in as an approved local test volunteer in one and a visitor in the other. A trusted local administrator can approve a test account through `admin_promote_volunteer`.
+2. Leave the volunteer unavailable. As the visitor, request a conversation in a language with no available volunteer and keep the waiting page open.
+3. In the volunteer dashboard, select that language, enable availability, and save settings. The waiting request should appear. Use **Refresh queue** to check immediately.
+4. Claim the request. Confirm the conversation shows the visitor’s public ID and that the visitor’s waiting page updates. Return to the dashboard to confirm the active conversation is listed, then reopen it and end it.
+5. Use **Dashboard language** to switch to Urdu. Check the dashboard and assigned conversation on a narrow screen to verify RTL layout.
 
-## Learn More
+## Administration and safeguarding
 
-To learn more about Next.js, take a look at the following resources:
+The [administration and safeguarding runbook](supabase/operations/README.md) covers first-administrator bootstrap, report review, volunteer vetting and approval, and retention operations.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Staging
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See the [staging deployment runbook](docs/staging.md) for Supabase and Vercel setup, the release commands, authentication redirects, and staging acceptance checks.
 
-## Deploy on Vercel
+## Email confirmation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The disposable local configuration disables email confirmation. With confirmation enabled, set the Supabase Auth Site URL to the application origin and allow the exact `<origin>/auth/confirm` redirect URL. Set `AUTH_SITE_URL` to the same application origin. The callback supports the default PKCE confirmation link in the browser that submitted signup.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+To support confirmation from another browser, configure the Supabase Confirm signup email template to link to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`. See the [Supabase Next.js Auth guide](https://supabase.com/docs/guides/getting-started/tutorials/with-nextjs).

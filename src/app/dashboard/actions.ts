@@ -1,0 +1,62 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { getDashboardProfile } from "@/lib/auth";
+import { getVisitorConversation, isConversationId, isLanguage, isOpen, parseConversation } from "@/lib/conversations";
+import { rememberLanguage } from "@/lib/language-preference";
+import { createClient } from "@/lib/supabase/server";
+
+async function visitorContext() {
+  const client = await createClient("mutation");
+  const profile = await getDashboardProfile(client);
+  if (profile?.role !== "visitor") redirect("/dashboard");
+  return { client, profile };
+}
+
+export async function saveLanguage(form: FormData) {
+  const { profile } = await visitorContext();
+  const language = form.get("language");
+  if (!isLanguage(language)) redirect("/dashboard?notice=invalid-language");
+  await rememberLanguage(profile.public_id, language);
+  redirect("/dashboard?notice=language-saved");
+}
+
+export async function startConversation(form: FormData) {
+  const { client, profile } = await visitorContext();
+  const language = form.get("language");
+  if (!isLanguage(language)) redirect("/dashboard?notice=invalid-language");
+
+  const { data, error } = await client.rpc("request_conversation", { p_language: language });
+  const created = error ? null : parseConversation(data);
+  if (created) {
+    await rememberLanguage(profile.public_id, created.language);
+    revalidatePath("/dashboard");
+    redirect(`/dashboard/conversations/${created.id}`);
+  }
+
+  // The RPC arbitrates concurrent requests. Recover its open conversation on retry.
+  const { conversation } = await getVisitorConversation(client);
+  if (conversation && isOpen(conversation)) {
+    revalidatePath("/dashboard");
+    redirect(`/dashboard/conversations/${conversation.id}`);
+  }
+  redirect("/dashboard?notice=request-failed");
+}
+
+export async function endConversation(form: FormData) {
+  const client = await createClient("mutation");
+  const profile = await getDashboardProfile(client);
+  if (profile?.role !== "visitor" && profile?.role !== "volunteer") redirect("/dashboard");
+  const id = form.get("conversationId");
+  if (!isConversationId(id)) redirect("/dashboard?notice=end-failed");
+
+  const { data, error } = await client.rpc("end_conversation", { p_conversation_id: id });
+  const conversation = error ? null : parseConversation(data);
+  if (!conversation || conversation.id !== id.toLowerCase() || isOpen(conversation)) {
+    redirect(`/dashboard/conversations/${id}?notice=end-failed`);
+  }
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/conversations/${id}`);
+  redirect(`/dashboard/conversations/${id}`);
+}
