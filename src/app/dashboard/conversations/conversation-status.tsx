@@ -5,14 +5,16 @@ import { endConversation } from "../actions";
 import { SubmitButton } from "../submit-button";
 import { conversationCopy, languageNames } from "./copy";
 import { StatusRefresh } from "./status-refresh";
+import { unreadLabel } from "./unread";
 
-export function ConversationStatus({ conversation, details = false, endFailed = false, volunteerLanguage, ownPublicId, interfaceLanguage }: {
+export function ConversationStatus({ conversation, details = false, endFailed = false, volunteerLanguage, ownPublicId, interfaceLanguage, unread = 0 }: {
   conversation: Conversation;
   details?: boolean;
   endFailed?: boolean;
   volunteerLanguage?: Language;
   ownPublicId?: string;
   interfaceLanguage?: Language;
+  unread?: number;
 }) {
   const { id, language, status, volunteerPublicId } = conversation;
   const locale = interfaceLanguage ?? volunteerLanguage ?? (language === "ur" ? "ur" : "en");
@@ -27,6 +29,7 @@ export function ConversationStatus({ conversation, details = false, endFailed = 
       <Heading className="display-heading text-2xl text-brand sm:text-3xl">{copy.title}</Heading>
       <div role="status" className="mt-4">
         <StatusPill tone={status === "waiting" ? "attention" : status === "active" ? "positive" : undefined}>{copy[status]}</StatusPill>
+        {unread > 0 && <span className="ms-2"><StatusPill tone="attention">{unreadLabel(unread, locale)}</StatusPill></span>}
         {description && <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">{description}</p>}
       </div>
       <dl className={`mt-4 gap-x-3 gap-y-3 border-t border-line pt-4 text-sm ${details ? "grid grid-cols-2" : "flex flex-wrap"}`}>

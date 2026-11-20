@@ -76,7 +76,34 @@ test("volunteer workflow and private chat in Chrome", { timeout: 180000 }, () =>
       await visitor.sendMessage("Visitor browser reply");
       await volunteer.expect(volunteer.text("Visitor browser reply"), "Volunteer did not receive visitor reply", 4500);
 
+      const deliver = (sender, message) => sql(
+        "begin; select set_config('request.jwt.claim.sub','" + sender + "',true);" +
+        "select public.send_message('" + conversationId + "','" + message + "'); commit;");
       await visitor.cdp("Page.bringToFront");
+      await visitor.navigate("/dashboard");
+      await visitor.expect(visitor.text("A volunteer has joined") + " && !(" + visitor.text("New message") + ")",
+        "Read messages unexpectedly showed a badge");
+      deliver(volunteerAccount, "Dashboard notification");
+      await visitor.expect(visitor.text("New message"), "Visitor dashboard did not show a live unread badge", 10000);
+      deliver(volunteerAccount, "Second unread notification");
+      await visitor.expect(visitor.text("2 unread"), "Visitor badge count did not increase", 10000);
+      await visitor.navigate(waitingPath);
+      await visitor.expect(visitor.text("Second unread notification"), "Unread message was not displayed");
+      await visitor.navigate("/dashboard");
+      await visitor.expect(visitor.text("A volunteer has joined") + " && !(" + visitor.text("2 unread") + ") && !(" + visitor.text("New message") + ")",
+        "Visitor badge did not clear after opening the conversation", 35000);
+      await volunteer.cdp("Page.bringToFront");
+      await volunteer.navigate("/dashboard");
+      await volunteer.expect(volunteer.text("Volunteer dashboard") + " && !(" + volunteer.text("New message") + ")",
+        "Volunteer dashboard did not return with its read position");
+      deliver(visitorAccount, "Volunteer dashboard notification");
+      await volunteer.expect(volunteer.text("New message"), "Volunteer dashboard did not show a live unread badge", 10000);
+      await volunteer.navigate(waitingPath);
+      await volunteer.expect(volunteer.text("Volunteer dashboard notification"), "Volunteer unread message was not displayed");
+      await visitor.cdp("Page.bringToFront");
+      await visitor.navigate(waitingPath);
+      await visitor.expect(visitor.text("Volunteer dashboard notification"), "Visitor chat did not return");
+
       await network(true);
       await visitor.expect("!navigator.onLine", "Chat browser did not go offline");
       assert.ok(await visitor.evaluate(visitor.button("Send") + ".disabled"), "Offline composer still accepts send");
@@ -85,12 +112,12 @@ test("volunteer workflow and private chat in Chrome", { timeout: 180000 }, () =>
       await network(false);
       await visitor.expect(visitor.text("History fixture 35") + " && " + visitor.text("History fixture 1"),
         "Reconnection did not recover the full multi-page gap");
-      await visitor.expect("document.querySelectorAll('[role=log] li').length===37", "Live reconciliation lost or duplicated messages");
+      await visitor.expect("document.querySelectorAll('[role=log] li').length===40", "Live reconciliation lost or duplicated messages");
       await visitor.navigate(waitingPath);
       await visitor.expect("!!(" + visitor.button("Load older messages") + ")", "History pagination not offered");
       assert.equal(await visitor.evaluate("document.querySelectorAll('[role=log] li').length"), 30);
       await visitor.press("Load older messages");
-      await visitor.expect("document.querySelectorAll('[role=log] li').length===37", "Older history did not merge without duplicates");
+      await visitor.expect("document.querySelectorAll('[role=log] li').length===40", "Older history did not merge without duplicates");
       assert.ok(await visitor.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Message log overflows mobile width");
       await visitor.resize(320, 840);
       assert.ok(await visitor.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Message log overflows at 320px");

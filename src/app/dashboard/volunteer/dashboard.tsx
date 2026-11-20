@@ -4,6 +4,8 @@ import { getMyConversations, type Language, type UserClient } from "@/lib/conver
 import { parseVolunteerSettings } from "@/lib/volunteer";
 import { EmptyState, Notice, PageHeading, StatusPill } from "@/app/ui/primitives";
 import { conversationCopy, languageNames } from "../conversations/copy";
+import { DashboardMessageRefresh } from "../conversations/dashboard-message-refresh";
+import { getUnreadCounts, unreadLabel } from "../conversations/unread";
 import { StatusRefresh } from "../conversations/status-refresh";
 import { SubmitButton } from "../submit-button";
 import { saveVolunteerSettings, setVolunteerLanguage } from "./actions";
@@ -19,15 +21,17 @@ export async function VolunteerDashboard({ client, publicId, language, notice }:
 }) {
   const copy = volunteerCopy[language];
   const capacityLabel = language === "ur" ? "فعال گفتگوؤں کی حد" : "Conversation capacity";
-  const [settingsResult, conversations] = await Promise.all([
+  const [settingsResult, conversations, unread] = await Promise.all([
     client.rpc("get_my_volunteer_settings"),
     getMyConversations(client),
+    getUnreadCounts(client),
   ]);
   const settings = settingsResult.error ? null : parseVolunteerSettings(settingsResult.data);
   const active = conversations?.filter(chat => chat.status === "active" && chat.volunteerPublicId === publicId);
   return (
     <main lang={language} dir={language === "ur" ? "rtl" : "ltr"}
       className="workspace">
+      <DashboardMessageRefresh topics={active?.map(chat => chat.id).sort().join(",") ?? ""} />
       <PageHeading title={copy.title} description={<span className="flex flex-wrap items-center gap-3">
         <bdi className="font-mono text-sm font-semibold text-brand">{publicId}</bdi>
         {settings && <StatusPill tone={settings.available ? "positive" : undefined}>{settings.available ? copy.available : copy.unavailable}</StatusPill>}
@@ -90,7 +94,13 @@ export async function VolunteerDashboard({ client, publicId, language, notice }:
                   <li key={chat.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
                     <div>
                       <bdi className="font-mono">{chat.visitorPublicId}</bdi>
-                      <p className="mt-2 flex flex-wrap items-center gap-2 text-muted"><StatusPill tone="positive">{copy.activeLabel}</StatusPill> <span lang={chat.language}>{languageNames[chat.language]}</span></p>
+                      <p className="mt-2 flex flex-wrap items-center gap-2 text-muted">
+                        <StatusPill tone="positive">{copy.activeLabel}</StatusPill>
+                        <span lang={chat.language}>{languageNames[chat.language]}</span>
+                        {unread.has(chat.id) && <span role="status">
+                          <StatusPill tone="attention">{unreadLabel(unread.get(chat.id) ?? 0, language)}</StatusPill>
+                        </span>}
+                      </p>
                     </div>
                     <Link href={`/dashboard/conversations/${chat.id}`} className="button-secondary">{conversationCopy[language].view}</Link>
                   </li>
@@ -99,7 +109,7 @@ export async function VolunteerDashboard({ client, publicId, language, notice }:
             )}
         </section>
       </div>
-      <StatusRefresh intervalMs={20000} label={conversationCopy[language].refresh} pendingLabel={conversationCopy[language].refreshing} />
+      <StatusRefresh intervalMs={active?.length ? undefined : 20000} label={conversationCopy[language].refresh} pendingLabel={conversationCopy[language].refreshing} />
     </main>
   );
 }

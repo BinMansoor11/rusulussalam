@@ -298,6 +298,18 @@ test("Human Connection against a fresh disposable Supabase stack", { timeout: 18
     assert.equal(sent.sender_public_id, volunteer.publicId);
     assert.equal(sent.sender_role, "volunteer");
     assert.ok(!("sender_id" in sent));
+    const unread = user => call("get_unread_conversation_counts", user);
+    const mark = user => call("mark_conversation_read", user, { p_conversation_id: chat, p_message_id: sent.id });
+    denied(await unread(), "anonymous unread counts");
+    assert.deepEqual(success(await unread(outsider), "unrelated unread counts"), []);
+    denied(await mark(outsider), "unrelated read position");
+    assert.deepEqual(success(await unread(volunteer), "sender unread counts"), []);
+    assert.deepEqual(success(await unread(visitor), "recipient unread counts"), [
+      { conversation_id: chat, unread_count: 1 },
+    ]);
+    success(await mark(visitor), "mark a displayed message read");
+    success(await mark(visitor), "repeat a read update");
+    assert.deepEqual(success(await unread(visitor), "updated unread counts"), []);
     const history = success(await call("get_messages", visitor, { p_conversation_id: chat }), "history");
     assert.ok(history.some(message => message.id === sent.id && message.content === "Integration message"));
     assert.deepEqual(success(await call("get_messages", outsider, { p_conversation_id: chat }), "unrelated history"), []);

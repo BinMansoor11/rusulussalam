@@ -23,11 +23,11 @@ export default async function ConversationPage({ params, searchParams }: PagePro
   const { data, error } = await client.rpc("get_conversation", { p_conversation_id: id });
   if (!error && data === null) notFound();
   const conversation = error ? null : parseConversation(data);
-  const volunteerLanguage = profile.role === "volunteer"
-    ? await getSiteLanguage(await preferredLanguage(profile.public_id)) : undefined;
+  const siteLanguage = await getSiteLanguage();
+  const locale = await getSiteLanguage(await preferredLanguage(profile.public_id, siteLanguage));
+  const volunteerLanguage = profile.role === "volunteer" ? locale : undefined;
   if (conversation && volunteerLanguage && conversation.volunteerPublicId !== profile.public_id) notFound();
   const { notice } = await searchParams;
-  const locale = volunteerLanguage ?? await getSiteLanguage(conversation?.language === "ur" ? "ur" : "en");
   const copy = conversationCopy[locale];
 
   return (

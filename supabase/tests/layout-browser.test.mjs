@@ -55,7 +55,7 @@ test("public and visitor layouts, keyboard focus, and authentication in Chrome",
       await setLanguage("en");
       await visitor.expect("document.documentElement.dir==='ltr'", "English direction was not restored");
       await visitor.screenshot("registration-mobile");
-      await visitor.signup(email, password);
+      await visitor.signup(email, password, { language: "ur" });
       await visitor.expect(visitor.text("Welcome to Purpose of Life"), "Visitor dashboard heading missing");
       assert.ok(await visitor.evaluate(fit), "Visitor dashboard overflow at 320px");
       await visitor.resize(1440, 960);
@@ -84,8 +84,11 @@ test("public and visitor layouts, keyboard focus, and authentication in Chrome",
       }
       await visitor.navigate("/dashboard");
       await visitor.expect("location.pathname==='/dashboard' && /VIS-[0-9A-F]{12}/.test(document.body.innerText)", "Dashboard unavailable");
+      await visitor.cdp("Network.deleteCookies", { name: "hc_site_language", url: process.env.HC_BROWSER_APP_URL ?? "http://localhost:3000" });
       await visitor.press("Start conversation");
       await visitor.expect(visitor.text("Waiting for a volunteer"), "Visitor waiting card unavailable");
+      assert.ok(await visitor.evaluate("!!document.querySelector('main[lang=en][dir=ltr]')"),
+        "Urdu conversation language changed the English interface");
       await visitor.resize(320, 840);
       assert.ok(await visitor.evaluate(fit), "Waiting screen overflow at 320px");
       await visitor.screenshot("waiting-mobile");

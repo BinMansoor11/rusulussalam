@@ -29,12 +29,14 @@ export function Chat({ id, initialStatus, role, publicId, locale, assigned }: {
   const olderInFlight = useRef(false);
   const log = useRef<HTMLDivElement>(null);
   const followLatest = useRef(true);
+  const lastRead = useRef<string | undefined>(undefined);
   const restorePosition = useRef<{ height: number; top: number } | null>(null);
   const timeFormat = new Intl.DateTimeFormat(locale === "ur" ? "ur-PK" : "en", {
     dateStyle: "medium", timeStyle: "short",
   });
   const status = initialStatus === "ended" || initialStatus === "flagged" ? initialStatus : chat.status;
   const canSend = status === "active" && chat.online;
+  const latest = chat.messages.at(-1)?.id;
 
   useEffect(() => {
     const node = log.current;
@@ -47,6 +49,48 @@ export function Chat({ id, initialStatus, role, publicId, locale, assigned }: {
       node.scrollTop = node.scrollHeight;
     }
   }, [chat.messages]);
+
+  useEffect(() => {
+    const node = log.current;
+    if (!latest || !node || status !== "active" || chat.loading || chat.accessLost) return;
+    const controller = new AbortController();
+    let sending = false;
+    let retry: number | undefined;
+
+    const markVisibleMessages = async () => {
+      if (controller.signal.aborted || sending || lastRead.current === latest ||
+        document.hidden || !navigator.onLine || node.scrollHeight - node.scrollTop - node.clientHeight > 8) return;
+      sending = true;
+      try {
+        const { error } = await createClient().rpc("mark_conversation_read", {
+          p_conversation_id: id, p_message_id: latest,
+        }).abortSignal(AbortSignal.any([controller.signal, AbortSignal.timeout(12000)]));
+        if (!error && !controller.signal.aborted) lastRead.current = latest;
+      } finally {
+        sending = false;
+        if (!controller.signal.aborted && lastRead.current !== latest && retry === undefined) {
+          retry = window.setTimeout(() => {
+            retry = undefined;
+            mark();
+          }, 5000);
+        }
+      }
+    };
+
+    const mark = () => { void markVisibleMessages().catch(() => {}); };
+    const frame = window.requestAnimationFrame(mark);
+    node.addEventListener("scroll", mark);
+    window.addEventListener("online", mark);
+    document.addEventListener("visibilitychange", mark);
+    return () => {
+      controller.abort();
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(retry);
+      node.removeEventListener("scroll", mark);
+      window.removeEventListener("online", mark);
+      document.removeEventListener("visibilitychange", mark);
+    };
+  }, [id, latest, status, chat.loading, chat.accessLost]);
 
   async function send(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

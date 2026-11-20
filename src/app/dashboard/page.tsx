@@ -11,6 +11,8 @@ import { Card, FieldLabel, Notice, PageHeading, StatusPill } from "../ui/primiti
 import { saveLanguage, startConversation } from "./actions";
 import { ConversationStatus } from "./conversations/conversation-status";
 import { conversationCopy } from "./conversations/copy";
+import { DashboardMessageRefresh } from "./conversations/dashboard-message-refresh";
+import { getUnreadCounts } from "./conversations/unread";
 import { StatusRefresh } from "./conversations/status-refresh";
 import { SubmitButton } from "./submit-button";
 import { VolunteerDashboard } from "./volunteer/dashboard";
@@ -47,10 +49,13 @@ export default async function Dashboard({ searchParams }: PageProps<"/dashboard"
   }
   const copy = conversationCopy[locale];
   const ui = dashboardCopy[locale];
-  const visitorState = profile?.role === "visitor" ? await getVisitorConversation(client) : null;
+  const [visitorState, unread] = profile?.role === "visitor"
+    ? await Promise.all([getVisitorConversation(client), getUnreadCounts(client)]) : [null, null];
+  const activeId = visitorState?.conversation?.status === "active" ? visitorState.conversation.id : "";
 
   return (
     <main lang={locale} dir={locale === "ur" ? "rtl" : "ltr"} className="workspace">
+      <DashboardMessageRefresh topics={activeId} />
       <PageHeading title={ui.title} description={ui.intro} actions={
         <form action={logout}>
           <SubmitButton label={ui.signout} pendingLabel={ui.signing} className="button-secondary" />
@@ -64,7 +69,8 @@ export default async function Dashboard({ searchParams }: PageProps<"/dashboard"
           <div className="min-w-0 space-y-5">
             {visitorState ? (
               <>
-                {visitorState.conversation && <ConversationStatus conversation={visitorState.conversation} interfaceLanguage={locale} />}
+                {visitorState.conversation && <ConversationStatus conversation={visitorState.conversation}
+                  interfaceLanguage={locale} unread={unread?.get(visitorState.conversation.id)} />}
                 {visitorState.failed ? (
                   <Card>
                     <Notice error>{copy.loadFailed}</Notice>
