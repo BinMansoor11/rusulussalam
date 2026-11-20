@@ -1,4 +1,4 @@
-﻿# Human Connection
+# Human Connection
 
 Human Connection is a peer-listening application built with Next.js and Supabase.
 
@@ -9,15 +9,14 @@ Human Connection is a peer-listening application built with Next.js and Supabase
 3. Copy `.env.example` to `.env.local`. Set `NEXT_PUBLIC_SUPABASE_URL` to the local API URL and set the publishable key or legacy anonymous key from the local stack. Set `AUTH_SITE_URL` to the exact origin you use in the browser.
 4. Run `pnpm dev` and open `http://localhost:3000`.
 
-`/register` and `/login` lead to the protected `/dashboard`. The navigation language switch remembers the interface language in the current browser. Visitors can also save their preferred conversation language.
+`/register` lets visitors and volunteers choose their role and conversation language. Pending volunteers see their application status on the home page. The navigation language switch remembers the interface language in the current browser.
 
 ## Try the volunteer workflow locally
 
-1. Use two browser profiles or a regular and a private window. Sign in as an approved local test volunteer in one and a visitor in the other. A trusted local administrator can approve a test account through `admin_promote_volunteer`.
-2. Leave the volunteer unavailable. As the visitor, request a conversation in a language with no available volunteer and keep the waiting page open.
-3. In the volunteer dashboard, select that language, enable availability, and save settings. The waiting request should appear. Use **Refresh queue** to check immediately.
-4. Claim the request. Confirm the conversation shows the visitor’s public ID and that the visitor’s waiting page updates. Return to the dashboard to confirm the active conversation is listed, then reopen it and end it.
-5. Use **Dashboard language** to switch to Urdu. Check the dashboard and assigned conversation on a narrow screen to verify RTL layout.
+1. Use separate browser profiles for the administrator, volunteer, and visitor. Sign up the volunteer and visitor with the same conversation language.
+2. In the admin dashboard, accept the volunteer application. As the visitor, request a conversation and keep the waiting page open.
+3. In the admin dashboard, find the waiting request and assign the approved volunteer. Confirm that both participants can open the chat and see only each other’s public ID.
+4. End the conversation and open its transcript from **Conversation history** in the admin dashboard.
 
 ## Administration and safeguarding
 

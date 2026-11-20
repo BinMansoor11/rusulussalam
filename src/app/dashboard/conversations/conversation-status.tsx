@@ -15,7 +15,7 @@ export function ConversationStatus({ conversation, details = false, endFailed = 
   interfaceLanguage?: Language;
 }) {
   const { id, language, status, volunteerPublicId } = conversation;
-  const locale = interfaceLanguage ?? volunteerLanguage ?? language;
+  const locale = interfaceLanguage ?? volunteerLanguage ?? (language === "ur" ? "ur" : "en");
   const copy = conversationCopy[locale];
   const participantId = volunteerLanguage ? conversation.visitorPublicId : volunteerPublicId;
   const description = status === "waiting" ? copy.waitingText :

@@ -1,10 +1,11 @@
 import type { createClient } from "@/lib/supabase/server";
+import { isConversationLanguage, type ConversationLanguage } from "./conversation-language";
 
 export type UserClient = Awaited<ReturnType<typeof createClient>>;
 export type Language = "en" | "ur";
 export type Conversation = {
   id: string;
-  language: Language;
+  language: ConversationLanguage;
   status: "waiting" | "active" | "ended" | "flagged";
   visitorPublicId: string;
   volunteerPublicId: string | null;
@@ -21,7 +22,7 @@ export function isConversationId(value: unknown): value is string {
 export function parseConversation(value: unknown): Conversation | null {
   if (typeof value !== "object" || value === null ||
     !("id" in value) || !isConversationId(value.id) ||
-    !("language" in value) || !isLanguage(value.language) ||
+    !("language" in value) || !isConversationLanguage(value.language) ||
     !("status" in value) || (value.status !== "waiting" && value.status !== "active" &&
       value.status !== "ended" && value.status !== "flagged") ||
     !("visitor_public_id" in value) || typeof value.visitor_public_id !== "string" ||

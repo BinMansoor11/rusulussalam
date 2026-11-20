@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { logout } from "@/app/auth/actions";
 import { getMyConversations, type Language, type UserClient } from "@/lib/conversations";
-import { parseQueue, parseVolunteerSettings } from "@/lib/volunteer";
+import { parseVolunteerSettings } from "@/lib/volunteer";
 import { EmptyState, Notice, PageHeading, StatusPill } from "@/app/ui/primitives";
 import { conversationCopy, languageNames } from "../conversations/copy";
 import { StatusRefresh } from "../conversations/status-refresh";
 import { SubmitButton } from "../submit-button";
-import { claimConversation, saveVolunteerSettings, setVolunteerLanguage } from "./actions";
+import { saveVolunteerSettings, setVolunteerLanguage } from "./actions";
 import { volunteerCopy } from "./copy";
 
 const languages = ["en", "ur"] as const;
@@ -19,20 +19,12 @@ export async function VolunteerDashboard({ client, publicId, language, notice }:
 }) {
   const copy = volunteerCopy[language];
   const capacityLabel = language === "ur" ? "فعال گفتگوؤں کی حد" : "Conversation capacity";
-  const [settingsResult, queueResult, conversations] = await Promise.all([
+  const [settingsResult, conversations] = await Promise.all([
     client.rpc("get_my_volunteer_settings"),
-    client.rpc("get_volunteer_queue"),
     getMyConversations(client),
   ]);
   const settings = settingsResult.error ? null : parseVolunteerSettings(settingsResult.data);
-  const queue = queueResult.error ? null : parseQueue(queueResult.data);
   const active = conversations?.filter(chat => chat.status === "active" && chat.volunteerPublicId === publicId);
-  const timeFormat = new Intl.DateTimeFormat(language === "ur" ? "ur-PK" : "en-GB", {
-    dateStyle: "medium", timeStyle: "short", timeZone: "UTC",
-  });
-  const claimNotice = notice === "claim-unavailable" ? copy.claimUnavailable :
-    notice === "claim-capacity" ? copy.claimCapacity : notice === "claim-failed" ? copy.claimFailed : null;
-
   return (
     <main lang={language} dir={language === "ur" ? "rtl" : "ltr"}
       className="workspace">
@@ -71,11 +63,11 @@ export async function VolunteerDashboard({ client, publicId, language, notice }:
               </label>
               <fieldset>
                 <legend className="text-sm font-medium">{copy.languages}</legend>
-                {languages.map(option => (
+                {Object.entries(languageNames).map(([option, label]) => (
                   <label key={option} className="mt-2 flex min-h-11 cursor-pointer items-center gap-3 rounded-control border border-line bg-background px-3 text-sm">
                     <input type="checkbox" name="supportedLanguages" value={option}
-                      defaultChecked={settings.languages.includes(option)} className="size-5 accent-brand" />
-                    <span lang={option}>{languageNames[option]}</span>
+                      defaultChecked={settings.languages.some(language => language === option)} className="size-5 accent-brand" />
+                    <span lang={option}>{label}</span>
                   </label>
                 ))}
               </fieldset>
@@ -107,34 +99,7 @@ export async function VolunteerDashboard({ client, publicId, language, notice }:
             )}
         </section>
       </div>
-      <section className="panel">
-        <div className="flex flex-wrap items-center justify-between gap-x-4">
-          <h2 className="display-heading text-2xl text-brand">{copy.queue}</h2>
-          <StatusRefresh intervalMs={settings?.available ? 20000 : undefined} label={copy.refresh} pendingLabel={copy.refreshing} />
-        </div>
-        {claimNotice && <Notice className="mt-3" error>{claimNotice}</Notice>}
-        {!queue ? <Notice className="mt-3" error>{copy.queueFailed}</Notice> :
-          queue.length === 0 ? <EmptyState>
-            {settings?.available === false ? copy.queueOffline : copy.queueEmpty}
-          </EmptyState> : (
-            <ul className="inset-list mt-4 space-y-3">
-              {queue.map(entry => (
-                <li key={entry.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-                  <div className="text-sm">
-                    <p className="flex flex-wrap items-center gap-2 font-medium"><StatusPill tone="attention">{copy.waiting}</StatusPill> <span lang={entry.language}>{languageNames[entry.language]}</span></p>
-                    <p className="mt-1 text-muted">{copy.requested} <time dateTime={entry.createdAt}>
-                      {timeFormat.format(new Date(entry.createdAt))} <bdi>UTC</bdi>
-                    </time></p>
-                  </div>
-                  <form action={claimConversation}>
-                    <input type="hidden" name="conversationId" value={entry.id} />
-                    <SubmitButton label={copy.claim} pendingLabel={copy.claiming} className="button" />
-                  </form>
-                </li>
-              ))}
-            </ul>
-          )}
-      </section>
+      <StatusRefresh intervalMs={20000} label={conversationCopy[language].refresh} pendingLabel={conversationCopy[language].refreshing} />
     </main>
   );
 }

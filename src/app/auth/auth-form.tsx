@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import type { Language } from "@/lib/conversations";
+import { conversationLanguages } from "@/lib/conversation-language";
 import { FieldLabel, Notice } from "../ui/primitives";
 import { login, register, type AuthState } from "./actions";
 import { authCopy, urduAuthErrors } from "./copy";
@@ -14,6 +15,24 @@ export function AuthForm({ mode, language }: { mode: "login" | "register"; langu
   const copy = authCopy[language];
   const form = (
     <form action={action} className="mt-7 space-y-4" aria-busy={pending}>
+      {signingUp && <>
+        <FieldLabel id="fullName" label={language === "ur" ? "پورا نام" : "Full name"}>
+          <input id="fullName" name="fullName" autoComplete="name" className="field" defaultValue={state.fullName} maxLength={120} required />
+        </FieldLabel>
+        <FieldLabel id="language" label={language === "ur" ? "گفتگو کی زبان" : "Conversation language"}>
+          <select id="language" name="language" className="field" defaultValue={state.language ?? ""} required>
+            <option value="" disabled>{language === "ur" ? "زبان منتخب کریں" : "Choose a language"}</option>
+            {Object.entries(conversationLanguages).map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+          </select>
+        </FieldLabel>
+        <FieldLabel id="role" label={language === "ur" ? "کردار" : "Role"}>
+          <select id="role" name="role" className="field" defaultValue={state.role ?? ""} required>
+            <option value="" disabled>{language === "ur" ? "کردار منتخب کریں" : "Choose a role"}</option>
+            <option value="visitor">{language === "ur" ? "مدعو (ملاقاتی)" : "Mad’oo (Visitor)"}</option>
+            <option value="volunteer">{language === "ur" ? "داعی (رضاکار)" : "Da’ee (Volunteer)"}</option>
+          </select>
+        </FieldLabel>
+      </>}
       <FieldLabel id="email" label={copy.email}>
         <input id="email" name="email" type="email" dir="ltr" autoComplete="email" className="field"
           defaultValue={state.email} maxLength={254} required />

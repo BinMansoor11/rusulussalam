@@ -11,8 +11,9 @@ import { getSiteLanguage } from "@/app/ui/locale";
 import { chatCopy } from "../conversations/chat-copy";
 import { languageNames } from "../conversations/copy";
 import { SubmitButton } from "../submit-button";
-import { promoteVolunteer, reviewReport, setAdminLanguage } from "./actions";
-import { adminCopy } from "./copy";
+import { reviewReport, setAdminLanguage } from "./actions";
+import { Assignments, type AssignmentData } from "./assignments";
+import { adminCopy, assignmentCopy } from "./copy";
 import { isReviewStatus, isTimestamp, parseReports, reviewStatuses } from "./reports";
 
 export const metadata: Metadata = { title: "Administrator dashboard" };
@@ -42,8 +43,7 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/dashb
     `${path}?${new URLSearchParams({ ...(filter && { status: filter }), before: last.created, beforeId: last.id })}`;
   const reviewError = notice === "review-invalid" ? copy.reviewInvalid : notice === "review-failed" ? copy.reviewFailed : null;
   const focusedVisible = page?.some(report => report.id === focused);
-  const promotionError = notice === "promotion-invalid" ? copy.promotionInvalid :
-    notice === "promotion-open" ? copy.promotionOpen : notice === "promotion-failed" ? copy.promotionFailed : null;
+  const assignmentResult = await client.rpc("admin_assignment_dashboard");
 
   return (
     <main lang={language} dir={language === "ur" ? "rtl" : "ltr"}
@@ -68,6 +68,9 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/dashb
         </div>
       } />
       {notice === "signout-failed" && <Notice error>{copy.signOutFailed}</Notice>}
+
+      <Link href="/dashboard/admin/history" className="button-secondary">{assignmentCopy[language].history}</Link>
+      <Assignments language={language} data={assignmentResult.error ? null : assignmentResult.data as AssignmentData} notice={notice} />
 
       <section className="panel" aria-labelledby="reports-heading">
         <div className="flex flex-wrap items-end justify-between gap-4">
@@ -163,33 +166,6 @@ export default async function AdminDashboard({ searchParams }: PageProps<"/dashb
         )}
       </section>
 
-      <section className="panel border-s-[#b89b60] sm:border-s-4" id="approval" aria-labelledby="approval-heading">
-        <h2 className="display-heading text-2xl text-brand sm:text-3xl" id="approval-heading">{copy.approval}</h2>
-        <p className="mt-2 max-w-prose text-sm text-muted">{copy.approvalHelp}</p>
-        <form action={promoteVolunteer} className="mt-4 grid max-w-xl gap-3">
-          <label className="text-sm font-medium">
-            {copy.target}
-            <input className="field font-mono" name="publicId" autoComplete="off" dir="ltr" required placeholder="VIS-…" />
-          </label>
-          <label className="text-sm font-medium">
-            {copy.confirmTarget}
-            <input className="field font-mono" name="confirmId" autoComplete="off" dir="ltr" required />
-          </label>
-          <fieldset className="flex flex-wrap gap-4">
-            <legend className="mb-2 text-sm font-medium">{copy.languages}</legend>
-            {(["en", "ur"] as const).map(option => (
-              <label key={option} className="flex min-h-11 items-center gap-2 rounded-control border border-line bg-background px-3 text-sm">
-                <input type="checkbox" name="supportedLanguages" value={option} className="size-4 accent-brand" />
-                <span lang={option}>{languageNames[option]}</span>
-              </label>
-            ))}
-          </fieldset>
-          <Confirmation name="verified">{copy.confirmPromotion}</Confirmation>
-          <SubmitButton label={copy.promote} pendingLabel={copy.promoting} className="button w-fit" />
-        </form>
-        {notice === "promoted" && <Notice className="mt-3">{copy.promoted}</Notice>}
-        {promotionError && <Notice className="mt-3" error>{promotionError}</Notice>}
-      </section>
     </main>
   );
 }

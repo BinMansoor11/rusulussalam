@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { logout } from "@/app/auth/actions";
 import { getDashboardProfile } from "@/lib/auth";
 import { getVisitorConversation, isOpen } from "@/lib/conversations";
+import { conversationLanguages } from "@/lib/conversation-language";
 import { preferredLanguage } from "@/lib/language-preference";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteLanguage } from "../ui/locale";
@@ -72,18 +73,22 @@ export default async function Dashboard({ searchParams }: PageProps<"/dashboard"
                 ) : (!visitorState.conversation || !isOpen(visitorState.conversation)) && (
                   <Card>
                     <h2 className="display-heading text-2xl text-brand sm:text-3xl">{copy.request}</h2>
-                    <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">{copy.choose}</p>
-                    <form action={startConversation} className="mt-5 flex flex-wrap items-end gap-3">
+                    {profile.conversation_language && <p className="mt-2 text-sm text-muted">
+                      {copy.language} · {conversationLanguages[profile.conversation_language]}
+                    </p>}
+                    <form action={profile.conversation_language ? startConversation : saveLanguage} className="mt-5 flex flex-wrap items-end gap-3">
+                      {!profile.conversation_language && <>
                       <div className="min-w-0 flex-[1_1_13rem]">
                       <FieldLabel id="language" label={copy.language}>
-                        <select key={language} id="language" name="language" defaultValue={language} className="field">
-                          <option value="en" lang="en" dir="ltr">English</option>
-                          <option value="ur" lang="ur" dir="rtl">اردو (Urdu)</option>
+                        <select id="language" name="language" defaultValue={language} className="field">
+                          {Object.entries(conversationLanguages).map(([code, label]) => <option key={code} value={code} lang={code}>{label}</option>)}
                         </select>
                       </FieldLabel>
                       </div>
-                      <SubmitButton label={copy.request} pendingLabel={copy.requesting} className="button" formAction={startConversation} />
-                      <SubmitButton label={copy.saveLanguage} pendingLabel={copy.saving} className="button-secondary" formAction={saveLanguage} />
+                      </>}
+                      {profile.conversation_language
+                        ? <SubmitButton label={copy.request} pendingLabel={copy.requesting} className="button" />
+                        : <SubmitButton label={copy.saveLanguage} pendingLabel={copy.saving} className="button" />}
                     </form>
                     {notice === "language-saved" && <Notice className="mt-3">{copy.saved}</Notice>}
                     {notice === "invalid-language" && <Notice className="mt-3" error>{copy.invalidLanguage}</Notice>}

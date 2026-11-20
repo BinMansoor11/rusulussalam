@@ -1,4 +1,5 @@
-import { isConversationId, isLanguage, type Language } from "@/lib/conversations";
+import { isConversationLanguage, type ConversationLanguage } from "@/lib/conversation-language";
+import { isConversationId } from "@/lib/conversations";
 
 export const reviewStatuses = ["reviewed", "escalated", "dismissed"] as const;
 export type ReviewStatus = typeof reviewStatuses[number];
@@ -17,7 +18,7 @@ export function isTimestamp(value: unknown): value is string {
 
 export type Report = {
   id: string;
-  language: Language;
+  language: ConversationLanguage;
   reporterRole: "visitor" | "volunteer";
   reporter: string;
   reported: string | null;
@@ -35,7 +36,7 @@ function parseReport(value: unknown): Report | null {
   const reason = reasons.find(reason => reason === row.reason);
   const isPublicId = (value: unknown): value is string =>
     typeof value === "string" && /^(VIS|VOL)-[0-9A-F]{12}$/.test(value);
-  if (!isConversationId(row.id) || !isLanguage(row.language) || !reason ||
+  if (!isConversationId(row.id) || !isConversationLanguage(row.language) || !reason ||
     (row.reporter_role !== "visitor" && row.reporter_role !== "volunteer") ||
     !isPublicId(row.reporter_public_id) || (row.reported_public_id !== null && !isPublicId(row.reported_public_id)) ||
     (row.notes !== null && typeof row.notes !== "string") ||

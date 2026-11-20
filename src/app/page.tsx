@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { isSignedIn } from "@/lib/auth";
+import { getSignedInProfile, isSignedIn, volunteerApplicationStatus } from "@/lib/auth";
 import { Card, GeometricPattern } from "./ui/primitives";
 import { getSiteLanguage } from "./ui/locale";
 
@@ -10,7 +10,7 @@ const content = {
     start: "Create an account", signIn: "Sign in", dashboard: "Go to your dashboard", how: "How it works",
     steps: [
       ["Create an account", "Sign up with your email and receive a public ID for conversations."],
-      ["Request a conversation", "Choose your preferred language. Your request waits for an available volunteer who speaks it."],
+      ["Request a conversation", "An administrator will match you with an available volunteer who speaks the language you chose at signup."],
       ["Ask at your own pace", "Talk privately about Islam, belief, or worship. You can end the conversation or submit a safeguarding report."],
     ],
     privacy: "Your privacy in conversations",
@@ -24,7 +24,7 @@ const content = {
     start: "اکاؤنٹ بنائیں", signIn: "سائن اِن", dashboard: "اپنے ڈیش بورڈ پر جائیں", how: "طریقہ کار",
     steps: [
       ["اکاؤنٹ بنائیں", "اپنی ای میل سے رجسٹر ہوں اور گفتگو کے لیے عوامی شناخت حاصل کریں۔"],
-      ["گفتگو کی درخواست کریں", "اپنی پسند کی زبان منتخب کریں۔ درخواست اسی زبان بولنے والے دستیاب رضاکار کا انتظار کرے گی۔"],
+      ["گفتگو کی درخواست کریں", "منتظم آپ کو اس زبان کے دستیاب رضاکار سے ملائے گا جو آپ نے رجسٹریشن کے وقت منتخب کی تھی۔"],
       ["اپنی سہولت سے سوال پوچھیں", "اسلام، ایمان یا عبادت کے بارے میں نجی گفتگو کریں۔ آپ گفتگو ختم کر سکتے ہیں یا حفاظتی رپورٹ بھیج سکتے ہیں۔"],
     ],
     privacy: "گفتگو میں آپ کی رازداری",
@@ -35,8 +35,12 @@ const content = {
 };
 
 export default async function Home() {
-  const [language, signedIn] = await Promise.all([getSiteLanguage(), isSignedIn()]);
+  const [language, signedIn, profile] = await Promise.all([getSiteLanguage(), isSignedIn(), getSignedInProfile()]);
   const copy = content[language];
+  const status = volunteerApplicationStatus(profile);
+  const applicationMessage = status === "pending"
+    ? (language === "ur" ? "آپ کی درخواست زیرِ غور ہے۔" : "Your volunteer application is pending review.")
+    : (language === "ur" ? "آپ کی درخواست منظور نہیں ہوئی۔" : "Your volunteer application was not approved.");
   return (
     <main className="site-shell space-y-12 pb-14 pt-7 sm:space-y-16 sm:pb-20 sm:pt-10">
       <section className="grid items-center gap-7 rounded-shell border border-line bg-surface p-4 sm:p-7 lg:grid-cols-[1.05fr_1fr] lg:gap-10">
@@ -46,12 +50,12 @@ export default async function Home() {
           </h1>
           <div className="mt-6 h-px w-14 bg-gold" aria-hidden="true" />
           <p className="mt-5 max-w-[36rem] text-base leading-relaxed text-muted sm:text-lg">{copy.intro}</p>
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          {status ? <p role="status" className="mt-7 font-semibold text-brand">{applicationMessage}</p> : <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link href={signedIn ? "/dashboard" : "/register"} className="button min-h-12 gap-3">
               {signedIn ? copy.dashboard : copy.start}<span aria-hidden="true" className="rtl:rotate-180">→</span>
             </Link>
             {!signedIn && <Link href="/login" className="button-secondary min-h-12">{copy.signIn}</Link>}
-          </div>
+          </div>}
         </div>
         <GeometricPattern className="sm:min-h-[23rem] lg:min-h-[29rem]" />
       </section>

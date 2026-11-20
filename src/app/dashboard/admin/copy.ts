@@ -1,3 +1,36 @@
+export const assignmentCopy = {
+  en: {
+    failed: "Could not load users and conversations. Refresh the page to try again.",
+    saveFailed: "The change could not be saved. Check the current status and try again.",
+    saved: "Change saved.", pending: "Pending Da’ee applications", noPending: "No pending applications.",
+    unverified: "Email verification pending", accept: "Accept", reject: "Reject", reopen: "Reopen application", saving: "Saving…",
+    waiting: "Mad’oo waiting for assignment", noWaiting: "No waiting requests.", assignLabel: "Assign Da’ee",
+    choose: "Choose a volunteer", assign: "Assign", assigning: "Assigning…", noMatch: "No matching volunteer has space.",
+    capacity: "Da’ee with capacity", noCapacity: "No volunteers have space.",
+    load: (used: number, total: number) => `${used} of ${total} in use`,
+    active: "Active assignments", noActive: "No active conversations.",
+    removeVolunteer: "Remove Da’ee and requeue", removeVisitor: "Remove Mad’oo and close", removing: "Removing…",
+    all: "All users", noUsers: "No users yet.", visitor: "Mad’oo", volunteer: "Da’ee", noLanguage: "Language not set",
+    statuses: { pending: "Pending", approved: "Approved", rejected: "Rejected" },
+    history: "Conversation history",
+  },
+  ur: {
+    failed: "صارفین اور گفتگو کی فہرست نہیں کھل سکی۔ صفحہ تازہ کر کے دوبارہ کوشش کریں۔",
+    saveFailed: "تبدیلی محفوظ نہیں ہو سکی۔ موجودہ صورتِ حال دیکھ کر دوبارہ کوشش کریں۔",
+    saved: "تبدیلی محفوظ ہو گئی۔", pending: "داعی بننے کی زیرِ غور درخواستیں", noPending: "کوئی درخواست زیرِ غور نہیں ہے۔",
+    unverified: "ای میل کی تصدیق باقی ہے", accept: "منظور کریں", reject: "مسترد کریں", reopen: "درخواست دوبارہ کھولیں", saving: "محفوظ ہو رہا ہے…",
+    waiting: "داعی کے منتظر مدعو", noWaiting: "کوئی گفتگو انتظار میں نہیں ہے۔", assignLabel: "داعی مقرر کریں",
+    choose: "داعی منتخب کریں", assign: "مقرر کریں", assigning: "مقرر کیا جا رہا ہے…", noMatch: "اس زبان کا کوئی دستیاب داعی نہیں ہے۔",
+    capacity: "نئی گفتگو کے لیے دستیاب داعی", noCapacity: "کسی داعی کے پاس گنجائش نہیں ہے۔",
+    load: (used: number, total: number) => `${total} میں سے ${used} گفتگو جاری ہیں`,
+    active: "جاری گفتگو", noActive: "کوئی گفتگو جاری نہیں ہے۔",
+    removeVolunteer: "داعی ہٹائیں اور درخواست واپس قطار میں بھیجیں", removeVisitor: "مدعو ہٹائیں اور گفتگو بند کریں", removing: "ہٹایا جا رہا ہے…",
+    all: "تمام صارفین", noUsers: "ابھی کوئی صارف نہیں ہے۔", visitor: "مدعو", volunteer: "داعی", noLanguage: "زبان منتخب نہیں ہوئی",
+    statuses: { pending: "زیرِ غور", approved: "منظور شدہ", rejected: "مسترد" },
+    history: "گفتگو کا ریکارڈ",
+  },
+};
+
 export const adminCopy = {
   en: {
     title: "Administrator dashboard", publicId: "Administrator public ID", reports: "Safeguarding reports",

@@ -26,33 +26,22 @@ test("volunteer workflow and private chat in Chrome", { timeout: 180000 }, () =>
         volunteerAccount + "'; insert into public.volunteers(id,supported_languages,max_active_conversations) values('" +
         volunteerAccount + "',array['en'],1); commit;");
       await volunteer.navigate("/dashboard");
-      await volunteer.expect(volunteer.text("Volunteer dashboard") + " && " + volunteer.text("Set yourself to available"),
-        "Volunteer dashboard or empty offline queue missing");
+      await volunteer.expect(volunteer.text("Volunteer dashboard"),
+        "Volunteer dashboard missing");
       assert.ok(!(await volunteer.evaluate(volunteer.text(visitorId))), "Offline queue showed a visitor identity");
       assert.ok(await volunteer.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Volunteer dashboard overflows at mobile width");
       await volunteer.evaluate("document.querySelector('[name=availability]').checked=true; document.querySelector('[name=supportedLanguages][value=en]').checked=false");
       await volunteer.press("Save settings");
-      await volunteer.expect(volunteer.text("Choose at least one supported language"), "Empty languages did not show validation");
+      await volunteer.expect("location.search.includes('notice=volunteer-invalid-settings')", "Empty languages did not show validation");
       assert.equal(sql("select is_available from public.volunteers where id='" + volunteerAccount + "'"), "f");
       await volunteer.evaluate("document.querySelector('[name=availability]').checked=true; document.querySelector('[name=supportedLanguages][value=en]').checked=true");
       await volunteer.press("Save settings");
-      const claimForm = "document.querySelector('input[value=" + JSON.stringify(conversationId) + "]')?.form";
-      await volunteer.expect("!!(" + claimForm + ")", "Matching waiting queue did not appear");
-      await volunteer.resize(1440);
-      assert.ok(await volunteer.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Volunteer desktop queue overflows");
-      await volunteer.screenshot("volunteer-desktop");
-      await volunteer.resize(320, 840);
-      assert.ok(await volunteer.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Volunteer queue overflows at 320px");
-      const staleClaim = await volunteer.evaluate(
-        "fetch('/dashboard').then(response=>response.text()).then(html=>{" +
-        "const page=new DOMParser().parseFromString(html,'text/html');" +
-        "return Array.from(new FormData(page.querySelector('input[value=" +
-        JSON.stringify(conversationId) + "]').form));})",
-      );
-      assert.ok(staleClaim.some(([name]) => name.startsWith("$ACTION_")), "Missing rendered claim action");
-      assert.ok(!(await volunteer.evaluate(volunteer.text(visitorId))), "Waiting queue showed a visitor identity");
-      await volunteer.press("Refresh queue");
-      await volunteer.expect("!!(" + claimForm + ")", "Manual refresh lost waiting queue");
+      await volunteer.expect("location.search.includes('notice=volunteer-saved')", "Settings did not save");
+      assert.ok(!(await volunteer.evaluate(volunteer.text(visitorId))), "Unassigned volunteer saw a visitor identity");
+      for (const width of [1440, 320]) {
+        await volunteer.resize(width);
+        assert.ok(await volunteer.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Volunteer dashboard overflows");
+      }
       await visitor.cdp("Page.bringToFront");
       await visitor.cdp("Network.enable");
       const network = offline => visitor.cdp("Network.emulateNetworkConditions", {
@@ -60,9 +49,14 @@ test("volunteer workflow and private chat in Chrome", { timeout: 180000 }, () =>
       });
       await network(true);
       await visitor.expect("!navigator.onLine", "Browser did not go offline");
-      await volunteer.evaluate(claimForm + ".querySelector('button').click()");
+      const visitorAccount = sql("select id from auth.users where email='" + visitorEmail + "'");
+      sql("begin; update public.profiles set role='admin' where id='" + visitorAccount + "';" +
+        "select set_config('request.jwt.claim.sub','" + visitorAccount + "',true);" +
+        "select public.admin_assign_conversation('" + conversationId + "','" + volunteerAccount + "');" +
+        "update public.profiles set role='visitor' where id='" + visitorAccount + "'; commit;");
+      await volunteer.navigate(waitingPath);
       await volunteer.expect("location.pathname===" + JSON.stringify(waitingPath) + " && " + volunteer.text("Visitor public ID"),
-        "Claim did not open assigned conversation");
+        "Assigned conversation did not open");
       assert.ok(await volunteer.evaluate(volunteer.text(visitorId)), "Assigned conversation omitted visitor public ID");
       assert.ok(!(await volunteer.evaluate(volunteer.text(visitorEmail))), "Assigned conversation exposed login email");
       assert.ok(await visitor.evaluate(visitor.text("Waiting for a volunteer")), "Offline visitor status unexpectedly changed");
@@ -91,8 +85,7 @@ test("volunteer workflow and private chat in Chrome", { timeout: 180000 }, () =>
       await network(false);
       await visitor.expect(visitor.text("History fixture 35") + " && " + visitor.text("History fixture 1"),
         "Reconnection did not recover the full multi-page gap");
-      const messageCount = await visitor.evaluate("document.querySelectorAll('[role=log] li').length");
-      assert.equal(messageCount, 37, "Live reconciliation lost or duplicated messages");
+      await visitor.expect("document.querySelectorAll('[role=log] li').length===37", "Live reconciliation lost or duplicated messages");
       await visitor.navigate(waitingPath);
       await visitor.expect("!!(" + visitor.button("Load older messages") + ")", "History pagination not offered");
       assert.equal(await visitor.evaluate("document.querySelectorAll('[role=log] li').length"), 30);
@@ -130,13 +123,6 @@ test("volunteer workflow and private chat in Chrome", { timeout: 180000 }, () =>
         "document.querySelector('details form').requestSubmit()");
       await visitor.expect(visitor.text("Your report was submitted.") + " && " + visitor.text("Conversation closed"),
         "Reporting did not persist and flag the conversation");
-      await volunteer.evaluate("(() => {const form=document.createElement('form');" +
-        "form.method='post';form.enctype='multipart/form-data';form.action='/dashboard';" +
-        "for(const [name,value] of " + JSON.stringify(staleClaim) + "){" +
-        "const input=document.createElement('input');input.type='hidden';input.name=name;" +
-        "input.value=value;form.append(input);}document.body.append(form);form.submit();})()");
-      await volunteer.expect("location.search.includes('notice=claim-unavailable')",
-        "Stale claim did not return a recoverable notice");
       console.log("Browser smoke passed: volunteer workflow, private chat, pagination, reconnect, safe text rendering, closing, and reporting.");
     } finally {
       sql("delete from public.reports where reporter_id=(select id from auth.users where email='" + visitorEmail +

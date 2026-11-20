@@ -8,7 +8,7 @@ export const authCopy = {
     loginIntro: "Sign in to return to your dashboard and conversations.",
     signupIntro: "Use your email to sign in. Other participants see your public ID.",
     aside: "A space to ask about Islam",
-    asideText: "Talk privately with a volunteer in English or Urdu about faith and the purpose of life.",
+    asideText: "Talk privately with a volunteer about faith and the purpose of life in your chosen language.",
   },
   ur: {
     login: "سائن اِن", register: "اکاؤنٹ بنائیں", email: "ای میل", password: "پاس ورڈ", confirm: "پاس ورڈ کی تصدیق",
@@ -19,11 +19,12 @@ export const authCopy = {
     loginIntro: "اپنے ڈیش بورڈ اور گفتگو پر واپس جانے کے لیے سائن اِن کریں۔",
     signupIntro: "سائن اِن کے لیے اپنی ای میل استعمال کریں۔ دوسرے شرکاء آپ کی عوامی شناخت دیکھتے ہیں۔",
     aside: "اسلام کے بارے میں سوال پوچھیں",
-    asideText: "ایمان اور مقصدِ زندگی کے بارے میں کسی رضاکار سے انگریزی یا اردو میں نجی گفتگو کریں۔",
+    asideText: "ایمان اور مقصدِ زندگی کے بارے میں اپنی منتخب زبان میں کسی رضاکار سے نجی گفتگو کریں۔",
   },
 };
 
 export const urduAuthErrors: Record<string, string> = {
+  "Enter your full name and choose a language and role.": "اپنا پورا نام درج کریں اور زبان اور کردار منتخب کریں۔",
   "Enter a valid email address.": "درست ای میل پتہ درج کریں۔",
   "Enter your password.": "اپنا پاس ورڈ درج کریں۔",
   "Use at least 8 characters and no more than 72 bytes for your password.": "پاس ورڈ میں کم از کم ۸ حروف اور زیادہ سے زیادہ ۷۲ بائٹس استعمال کریں۔",

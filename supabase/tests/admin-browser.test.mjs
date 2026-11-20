@@ -5,7 +5,7 @@ import { withBrowser } from "./browser-fixtures.mjs";
 
 const path = "/dashboard/admin";
 
-test("administrator dashboard, report review, and verified promotion in Chrome", { timeout: 120000 }, () =>
+test("administrator dashboard and report review in Chrome", { timeout: 120000 }, () =>
   withBrowser(async ({ visitor: admin, volunteer: applicant, sql }) => {
     assert.equal(sql("select count(*) from public.profiles where role='admin'"), "0",
       "Use a disposable stack without an existing administrator");
@@ -42,7 +42,7 @@ test("administrator dashboard, report review, and verified promotion in Chrome",
       sql(`begin;
         do $$ declare chat uuid; begin
           perform set_config('request.jwt.claim.sub', '${userId}', true);
-          chat := (public.request_conversation('en')->>'id')::uuid;
+          chat := (public.request_conversation()->>'id')::uuid;
           perform public.submit_safeguarding_report(chat, 'other', '${evidence}');
           perform public.end_conversation(chat);
         end $$;
@@ -64,7 +64,7 @@ test("administrator dashboard, report review, and verified promotion in Chrome",
       await admin.resize(320, 840);
       assert.ok(await admin.evaluate("document.documentElement.scrollWidth <= window.innerWidth"), "Admin report detail overflows at 320px");
       assert.ok(await admin.evaluate(admin.text(target)), "Reporter public ID missing");
-      assert.ok(!(await admin.evaluate(admin.text(applicantEmail))) && !(await admin.evaluate(admin.text(userId))),
+      assert.ok(!(await admin.evaluate("document.querySelector('#reports-heading').closest('section').innerText.includes(" + JSON.stringify(applicantEmail) + ")")) && !(await admin.evaluate(admin.text(userId))),
         "Review page exposed a private account identifier");
       await admin.evaluate("document.querySelector('details select').value='escalated';" +
         "document.querySelector('[name=adminNotes]').value=" + JSON.stringify(operatorNotes) + ";" +
@@ -74,27 +74,6 @@ test("administrator dashboard, report review, and verified promotion in Chrome",
         "Administrator review did not save");
       assert.ok(await admin.evaluate(admin.text(evidence)), "Original evidence disappeared after review");
       assert.equal(sql(`select admin_notes from public.reports where reporter_id='${userId}'`), operatorNotes);
-
-      const setApproval = (confirmation) => admin.evaluate(
-        "document.querySelector('[name=publicId]').value=" + JSON.stringify(target) + ";" +
-        "document.querySelector('[name=confirmId]').value=" + JSON.stringify(confirmation) + ";" +
-        "document.querySelector('[name=supportedLanguages][value=en]').checked=true;" +
-        "document.querySelector('[name=verified]').checked=true",
-      );
-      await setApproval("VIS-000000000000");
-      await admin.press("Promote to volunteer");
-      await admin.expect(admin.text("Enter the same visitor public ID twice"), "Mismatched approval was not rejected");
-      assert.equal(sql(`select role from public.profiles where id='${userId}'`), "visitor");
-      await setApproval(target);
-      await admin.press("Promote to volunteer");
-      await admin.expect(admin.text("Volunteer approved."), "Volunteer approval did not complete");
-      await applicant.cdp("Page.bringToFront");
-      await applicant.navigate("/dashboard");
-      await applicant.expect(applicant.text("Volunteer dashboard") + " && /VOL-[A-F0-9]{12}/.test(document.body.innerText)",
-        "Promoted user did not receive the volunteer dashboard");
-      await applicant.navigate(path);
-      await applicant.expect(applicant.text("This page could not be found"), "Volunteer reached admin route");
-      assert.ok(!(await applicant.evaluate(applicant.text(evidence))), "Volunteer received report details");
 
       await admin.cdp("Page.bringToFront");
       await admin.evaluate("document.querySelector('[name=interfaceLanguage]').value='ur';" +

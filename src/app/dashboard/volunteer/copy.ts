@@ -19,7 +19,7 @@ export const volunteerCopy = {
     save: "Save settings",
     saving: "Saving…",
     settingsFailed: "We couldn’t load your settings. Refresh and try again.",
-    invalidSettings: "Choose at least one supported language: English or Urdu.",
+    invalidSettings: "Choose at least one and no more than two supported languages.",
     saveFailed: "We couldn’t save your settings. Try again shortly.",
     saved: "Volunteer settings saved.",
     active: "Active conversations",

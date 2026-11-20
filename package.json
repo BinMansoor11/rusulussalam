@@ -12,6 +12,7 @@
     "test:supabase": "node --test supabase/tests/integration.test.mjs",
     "test:volunteer-browser": "node --test supabase/tests/volunteer-browser.test.mjs",
     "test:admin-browser": "node --test supabase/tests/admin-browser.test.mjs",
+    "test:assignment-browser": "node --test supabase/tests/assignment-browser.test.mjs",
     "test:layout-browser": "node --test supabase/tests/layout-browser.test.mjs"
   },
   "dependencies": {

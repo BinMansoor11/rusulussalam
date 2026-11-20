@@ -107,8 +107,10 @@ async function account(config, role) {
   const email = `hc-${role}-${randomUUID()}@example.com`;
   const password = `Hc9!${randomUUID()}`;
   const credentials = { email, password };
+  const signupRole = role.endsWith("-volunteer") ? "volunteer" : "visitor";
   const signup = success(await request(config, "/auth/v1/signup", {
-    data: { ...credentials, data: { role: "admin" } },
+    data: { ...credentials, data: { role: "admin", signup_role: signupRole,
+      full_name: "Integration test user", conversation_language: "ur" } },
   }), "signup");
   const session = success(await request(config, "/auth/v1/token?grant_type=password", {
     data: credentials,
@@ -117,9 +119,10 @@ async function account(config, role) {
   assert.equal((signup.user ?? signup).id, id, "Signup and login refer to the same user");
   assert.ok(session.access_token, "Password login issued an access token");
   const profile = success(await rpc(config, "get_my_profile", session.access_token), "profile");
-  assert.equal(profile.role, "visitor", "Signup metadata cannot set the role");
-  assert.match(profile.public_id, /^VIS-/);
-  assert.ok(!("id" in profile) && !("email" in profile), "Sanitized profile");
+  assert.equal(profile.role, signupRole, "Signup metadata cannot create an admin");
+  assert.equal(profile.application_status, signupRole === "volunteer" ? "pending" : null);
+  assert.match(profile.public_id, signupRole === "volunteer" ? /^VOL-/ : /^VIS-/);
+  assert.ok(!("id" in profile) && !("email" in profile) && !("full_name" in profile), "Sanitized profile");
   return { id, email, token: session.access_token, publicId: profile.public_id };
 }
 
@@ -210,45 +213,45 @@ test("Human Connection against a fresh disposable Supabase stack", { timeout: 18
     assert.throws(() => bootstrap(admin.email), "Bootstrap rejects a second run");
     assert.equal(success(await call("get_my_profile", admin), "bootstrapped profile").role, "admin");
     assert.deepEqual(success(await call("admin_list_reports", admin), "empty admin report list"), []);
-    assert.ok(!(await call("admin_promote_volunteer", admin, {
-      p_public_id: administratorId, p_languages: ["en"],
-    })).ok, "An administrator cannot promote their own account");
+    assert.ok(!(await call("admin_review_volunteer", admin, {
+      p_id: admin.id, p_status: "approved",
+    })).ok, "An administrator cannot approve an account without an application");
     denied(await call("admin_list_reports", visitor), "visitor report list");
     denied(await call("get_my_profile"), "anonymous profile RPC");
-    denied(await call("get_volunteer_queue", visitor), "visitor queue access");
+    denied(await call("admin_assignment_dashboard", visitor), "visitor user directory access");
     denied(await call("get_my_volunteer_settings", visitor), "visitor settings read");
     denied(await call("update_volunteer_settings", visitor, {
       p_is_available: true, p_supported_languages: ["ur"],
     }), "visitor settings write");
-    denied(await call("admin_promote_volunteer", visitor, { p_public_id: visitor.publicId }), "self-promotion");
+    denied(await call("admin_review_volunteer", visitor, { p_id: visitor.id, p_status: "approved" }), "self-promotion");
     denied(await call("purge_expired_data", visitor), "visitor cleanup");
     denied(await request(config, "/rest/v1/messages?select=id", { token: visitor.token }), "direct table access");
     for (const user of [firstVolunteer, secondVolunteer]) {
-      const publicId = success(await call("admin_promote_volunteer", admin, {
-        p_public_id: user.publicId, p_languages: ["ur"], p_max_chats: 1,
-      }), "admin promotion");
-      user.publicId = publicId;
-      assert.match(publicId, /^VOL-/);
+      denied(await call("get_my_volunteer_settings", user), "pending volunteer settings access");
+      success(await call("admin_review_volunteer", admin, { p_id: user.id, p_status: "approved" }), "admin approval");
       denied(await call("admin_list_reports", user), "volunteer admin access");
-      denied(await call("admin_promote_volunteer", user, { p_public_id: outsider.publicId }), "volunteer promotion");
+      denied(await call("admin_review_volunteer", user, { p_id: outsider.id, p_status: "approved" }), "volunteer approval");
       const settings = success(await call("get_my_volunteer_settings", user), "volunteer settings lookup");
-      assert.deepEqual(settings, { is_available: false, supported_languages: ["ur"], max_active_conversations: 1 });
-      assert.deepEqual(success(await call("get_volunteer_queue", user), "offline queue"), []);
+      assert.deepEqual(settings, { is_available: true, supported_languages: ["ur"], max_active_conversations: 2 });
+      postgres(config, `update public.volunteers set max_active_conversations=1 where id='${user.id}'`);
     }
   });
 
-  await step("waiting requests, language queue, and concurrent claims", async () => {
-    const created = success(await call("request_conversation", visitor, { p_language: "ur" }), "request");
+  const assign = (conversationId, applicant, actor = admin) => call("admin_assign_conversation", actor, {
+    p_conversation_id: conversationId, p_volunteer_id: applicant.id,
+  });
+  await step("waiting requests, language checks, and concurrent assignments", async () => {
+    const created = success(await call("request_conversation", visitor), "request");
     chat = uuid(created.id);
     assert.equal(created.status, "waiting");
     receiver = open(chat, visitor.token);
     assert.equal(await receiver.joinStatus(), "ok");
-    assert.ok(!(await call("request_conversation", visitor, { p_language: "ur" })).ok, "one open chat");
-    denied(await call("claim_conversation", visitor, { p_conversation_id: chat }), "visitor claim");
+    assert.equal(success(await call("request_conversation", visitor), "repeated request").id, chat);
+    denied(await assign(chat, firstVolunteer, visitor), "visitor assignment");
     success(await call("update_volunteer_settings", firstVolunteer, {
       p_is_available: true, p_supported_languages: ["en"],
     }), "English-only settings");
-    assert.deepEqual(success(await call("get_volunteer_queue", firstVolunteer), "language-filtered queue"), []);
+    assert.equal((await assign(chat, firstVolunteer)).body?.message, "Language mismatch");
     for (const languages of [[], ["fr"], ["en", "en"]]) {
       const invalid = await call("update_volunteer_settings", firstVolunteer, {
         p_is_available: true, p_supported_languages: languages,
@@ -259,12 +262,9 @@ test("Human Connection against a fresh disposable Supabase stack", { timeout: 18
       success(await call("update_volunteer_settings", user, {
         p_is_available: true, p_supported_languages: ["ur"],
       }), "volunteer settings");
-      const queue = success(await call("get_volunteer_queue", user), "queue");
-      assert.deepEqual(queue.map(entry => Object.keys(entry).sort()), [["created_at", "id", "language"]]);
-      assert.equal(queue[0].id, chat);
     }
     const candidates = [firstVolunteer, secondVolunteer];
-    const claims = await Promise.all(candidates.map(user => call("claim_conversation", user, { p_conversation_id: chat })));
+    const claims = await Promise.all(candidates.map(user => assign(chat, user)));
     assert.equal(claims.filter(response => response.ok).length, 1);
     assert.equal(claims.find(response => !response.ok).status, 400);
     volunteer = candidates[claims.findIndex(response => response.ok)];
@@ -278,10 +278,10 @@ test("Human Connection against a fresh disposable Supabase stack", { timeout: 18
     success(await call("update_volunteer_settings", other, {
       p_is_available: false, p_supported_languages: ["ur"],
     }), "take unassigned volunteer offline");
-    const waiting = success(await call("request_conversation", secondVisitor, { p_language: "ur" }), "capacity fallback");
+    const waiting = success(await call("request_conversation", secondVisitor), "second request");
     waitingChat = uuid(waiting.id);
     assert.equal(waiting.status, "waiting");
-    assert.equal((await call("claim_conversation", volunteer, { p_conversation_id: waitingChat })).status, 400);
+    assert.equal((await assign(waitingChat, volunteer)).body?.message, "Volunteer capacity reached");
     const unrelated = await call("get_conversation", outsider, { p_conversation_id: chat });
     assert.equal(success(unrelated, "unrelated chat lookup"), null);
   });
@@ -349,9 +349,10 @@ test("Human Connection against a fresh disposable Supabase stack", { timeout: 18
     assert.equal(updated.reason, "harassment");
     assert.equal(updated.admin_notes, "Separate operator decision");
     assert.ok(updated.reviewed_at);
-    const assigned = success(await call("request_conversation", outsider, { p_language: "ur" }), "automatic assignment");
+    const assigned = success(await call("request_conversation", outsider), "retention fixture request");
     endedChat = uuid(assigned.id);
-    assert.equal(assigned.status, "active");
+    assert.equal(assigned.status, "waiting");
+    success(await assign(endedChat, volunteer), "retention fixture assignment");
     success(await call("send_message", outsider, { p_conversation_id: endedChat, p_content: "Retention fixture" }), "fixture message");
     success(await request(config, `/auth/v1/admin/users/${outsider.id}`, { method: "DELETE", service: true }), "account deletion");
     const oldSession = await call("get_conversation", outsider, { p_conversation_id: endedChat });
@@ -369,10 +370,12 @@ test("Human Connection against a fresh disposable Supabase stack", { timeout: 18
     postgres(config, `update public.conversations set created_at=now()-interval '61 minutes' where id='${waitingChat}';
       update public.conversations set ended_at=now()-interval '15 days' where id='${endedChat}';
       update public.conversations set flagged_at=now()-interval '89 days' where id='${chat}'`);
-    assert.deepEqual(success(await call("get_volunteer_queue", volunteer), "expired queue"), []);
-    const expired = await call("claim_conversation", volunteer, { p_conversation_id: waitingChat });
+    const expired = await assign(waitingChat, volunteer);
     assert.equal(expired.status, 400);
-    assert.equal(expired.body?.message, "Conversation unavailable");
+    assert.equal(expired.body?.message, "Request is no longer waiting");
+    const transcript = success(await call("admin_conversation_history", admin, { p_offset: 0, p_conversation_id: endedChat }), "expired transcript");
+    assert.equal(transcript.transcript.expired, true);
+    assert.deepEqual(transcript.transcript.messages, []);
     const first = await purge();
     assert.equal(first.closed_waiting, 1);
     assert.equal(first.purged_messages, 1);

@@ -1,6 +1,6 @@
 import type { Language } from "@/lib/conversations";
 
-export const languageNames = { en: "English", ur: "اردو" };
+export { conversationLanguages as languageNames } from "@/lib/conversation-language";
 
 export const conversationCopy = {
   en: {
@@ -11,10 +11,10 @@ export const conversationCopy = {
     requesting: "Requesting…",
     saveLanguage: "Save language",
     saving: "Saving…",
-    saved: "Language preference saved on this browser.",
-    invalidLanguage: "Choose English or Urdu.",
+    saved: "Conversation language saved to your account.",
+    invalidLanguage: "Choose a supported conversation language.",
     waiting: "Waiting for a volunteer",
-    waitingText: "Your request is open. A volunteer who speaks your chosen language can join when available.",
+    waitingText: "Your request is waiting for an administrator to assign a volunteer who speaks your language.",
     active: "A volunteer has joined",
     activeText: "You can now exchange messages with your volunteer.",
     ended: "Conversation ended",
@@ -42,10 +42,10 @@ export const conversationCopy = {
     requesting: "درخواست بھیجی جا رہی ہے…",
     saveLanguage: "زبان محفوظ کریں",
     saving: "محفوظ ہو رہی ہے…",
-    saved: "آپ کی زبان کی ترجیح اس براؤزر میں محفوظ ہو گئی ہے۔",
-    invalidLanguage: "انگریزی یا اردو منتخب کریں۔",
+    saved: "گفتگو کی زبان آپ کے اکاؤنٹ میں محفوظ ہو گئی ہے۔",
+    invalidLanguage: "گفتگو کے لیے دستیاب زبان منتخب کریں۔",
     waiting: "رضاکار کا انتظار ہے",
-    waitingText: "آپ کی درخواست کھلی ہے۔ آپ کی منتخب زبان بولنے والا رضاکار دستیاب ہونے پر شامل ہو سکتا ہے۔",
+    waitingText: "منتظم آپ کی زبان بولنے والے رضاکار کو آپ کی گفتگو کے لیے مقرر کرے گا۔",
     active: "رضاکار شامل ہو گیا ہے",
     activeText: "اب آپ اپنے رضاکار سے پیغامات کا تبادلہ کر سکتے ہیں۔",
     ended: "گفتگو ختم ہو گئی ہے",

@@ -27,7 +27,7 @@ export default async function ConversationPage({ params, searchParams }: PagePro
     ? await getSiteLanguage(await preferredLanguage(profile.public_id)) : undefined;
   if (conversation && volunteerLanguage && conversation.volunteerPublicId !== profile.public_id) notFound();
   const { notice } = await searchParams;
-  const locale = volunteerLanguage ?? await getSiteLanguage(conversation?.language);
+  const locale = volunteerLanguage ?? await getSiteLanguage(conversation?.language === "ur" ? "ur" : "en");
   const copy = conversationCopy[locale];
 
   return (

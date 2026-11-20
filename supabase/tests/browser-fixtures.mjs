@@ -70,16 +70,22 @@ async function tab(target, origin) {
       input.form.requestSubmit();
     } + ")(" + JSON.stringify(message) + ")");
   }
-  async function signup(email, password) {
+  async function signup(email, password, { role = "visitor", language = "en", name = "Browser test user" } = {}) {
     await navigate("/register");
     await expect("!!document.querySelector('#confirmation')", "Signup form unavailable");
-    await evaluate("(" + function (email, password) {
+    await evaluate("(" + function (email, password, role, language, name) {
+      document.querySelector("#fullName").value = name;
+      document.querySelector("#language").value = language;
+      document.querySelector("#role").value = role;
       document.querySelector("#email").value = email;
       document.querySelector("#password").value = password;
       document.querySelector("#confirmation").value = password;
       document.querySelector("#confirmation").form.requestSubmit();
-    } + ")(" + JSON.stringify(email) + "," + JSON.stringify(password) + ")");
-    await expect("location.pathname==='/dashboard' && !!document.querySelector('#language')", "Synthetic visitor signup failed");
+    } + ")(" + [email, password, role, language, name].map(value => JSON.stringify(value)).join(",") + ")");
+    const ready = role === "volunteer"
+      ? "location.pathname==='/' && " + text("Your volunteer application is pending review.")
+      : "location.pathname==='/dashboard' && " + text("Start conversation");
+    await expect(ready, "Synthetic signup failed");
   }
   return { cdp, evaluate, expect, navigate, text, button, press, mobile, resize, screenshot, signup, sendMessage, close: () => socket.close() };
 }

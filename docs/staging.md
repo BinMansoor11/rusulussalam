@@ -43,7 +43,7 @@ select
   (select count(*) from auth.users) as auth_users;
 ```
 
-Use a clean, reviewed checkout in a staging-only directory. Compare the project reference in the dashboard and the local CLI link. The commands below use the verified v2 CLI, where `--linked` explicitly selects the linked remote project. The dry run should list only `20261118000000_human_connection.sql`. Confirm the target and dry run before approving the write.
+Use a clean, reviewed checkout in a staging-only directory. Compare the project reference in the dashboard and the local CLI link. The commands below use the verified v2 CLI, where `--linked` explicitly selects the linked remote project. The dry run should list only pending files from `supabase/migrations`. Deploy the application changes with the matching migrations because the assignment RPCs change together. Confirm the target and dry run before approving the write.
 
 ```powershell
 $stagingRef = 'REPLACE_WITH_STAGING_PROJECT_REF'
@@ -88,7 +88,7 @@ Open the staging alias in a signed-out browser and verify it requires Vercel acc
 - [ ] Deployment access requires permitted Vercel membership. The staging alias, Supabase project reference, and current migration history match the approval.
 - [ ] Register with a synthetic test inbox, receive the confirmation email, follow its link on the staging alias, and confirm a visitor public ID. Verify invalid or reused links show the recovery screen. Check sign-in, sign-out, expired sessions, unauthenticated redirects, and secure cookies.
 - [ ] Request an English and an Urdu conversation in separate visitor sessions. Verify waiting when unavailable, no duplicate open request, and recovery after refresh.
-- [ ] Approve a vetted test volunteer from an authorized administrator session. Check availability and language controls, queue sanitization, claiming, concurrent claims, and capacity. Verify visitor and volunteer sessions cannot load admin reports or approve accounts.
+- [ ] Approve a vetted test volunteer from an authorized administrator session. Check language and capacity matching, concurrent assignments, participant removal, and transcript access. Verify visitor and volunteer sessions cannot load admin reports or transcripts, or approve accounts.
 - [ ] Exchange persisted messages in two authorized sessions. Verify ordering, history pagination, offline catch-up, and closed or flagged composer behavior. Confirm an unrelated test account cannot read history, send, or join the private topic, and that client publishing to that topic is denied.
 - [ ] Submit a report and use the admin dashboard to review it. Check that reporter notes remain intact, review notes remain separate, and non-admin sessions cannot see the report.
 - [ ] Verify English and Urdu, mobile layout, and keyboard navigation using the deployed build. Use synthetic details in screenshots and logs.

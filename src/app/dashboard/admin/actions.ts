@@ -7,7 +7,6 @@ import { isConversationId, isLanguage } from "@/lib/conversations";
 import { rememberLanguage } from "@/lib/language-preference";
 import { rememberSiteLanguage } from "@/app/ui/locale";
 import { createClient } from "@/lib/supabase/server";
-import { supportedLanguages } from "@/lib/volunteer";
 import { isReviewStatus } from "./reports";
 
 const path = "/dashboard/admin";
@@ -46,25 +45,34 @@ export async function reviewReport(form: FormData) {
   redirect(`${path}?notice=${error ? "review-failed" : "reviewed"}${focus}`);
 }
 
-export async function promoteVolunteer(form: FormData) {
-  const { client } = await administrator();
-  const id = form.get("publicId");
-  const confirmId = form.get("confirmId");
-  const languages = form.getAll("supportedLanguages");
-  const target = typeof id === "string" ? id.trim().toUpperCase() : "";
-  if (!/^VIS-[0-9A-F]{12}$/.test(target) || typeof confirmId !== "string" ||
-    confirmId.trim().toUpperCase() !== target || form.get("verified") !== "on" ||
-    !supportedLanguages(languages)) redirect(`${path}?notice=promotion-invalid#approval`);
+function finishAssignment(failed: boolean): never {
+  revalidatePath(path);
+  redirect(`${path}?notice=${failed ? "assignment-failed" : "assignment-saved"}#assignments`);
+}
 
-  const { data, error } = await client.rpc("admin_promote_volunteer", {
-    p_public_id: target, p_languages: languages,
-  }).retry(false);
-  if (error?.code === "P0001" && error.message === "Visitor has an open conversation") {
-    redirect(`${path}?notice=promotion-open#approval`);
-  }
-  if (error || typeof data !== "string" || !/^VOL-[0-9A-F]{12}$/.test(data)) {
-    redirect(`${path}?notice=promotion-failed#approval`);
-  }
-  revalidatePath("/dashboard");
-  redirect(`${path}?notice=promoted#approval`);
+export async function reviewVolunteer(form: FormData) {
+  const { client } = await administrator();
+  const id = form.get("userId");
+  const status = form.get("status");
+  if (!isConversationId(id) || (status !== "approved" && status !== "rejected" && status !== "pending")) finishAssignment(true);
+  const { error } = await client.rpc("admin_review_volunteer", { p_id: id, p_status: status }).retry(false);
+  finishAssignment(Boolean(error));
+}
+
+export async function assignConversation(form: FormData) {
+  const { client } = await administrator();
+  const id = form.get("conversationId");
+  const volunteerId = form.get("volunteerId");
+  if (!isConversationId(id) || !isConversationId(volunteerId)) finishAssignment(true);
+  const { error } = await client.rpc("admin_assign_conversation", { p_conversation_id: id, p_volunteer_id: volunteerId }).retry(false);
+  finishAssignment(Boolean(error));
+}
+
+export async function removeParticipant(form: FormData) {
+  const { client } = await administrator();
+  const id = form.get("conversationId");
+  const role = form.get("role");
+  if (!isConversationId(id) || (role !== "visitor" && role !== "volunteer")) finishAssignment(true);
+  const { error } = await client.rpc("admin_remove_participant", { p_conversation_id: id, p_role: role }).retry(false);
+  finishAssignment(Boolean(error));
 }

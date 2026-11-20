@@ -2,8 +2,16 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isConversationLanguage } from "@/lib/conversation-language";
 
-export type AuthState = { error?: string; notice?: string; email?: string };
+export type AuthState = {
+  error?: string;
+  notice?: string;
+  email?: string;
+  fullName?: string;
+  language?: string;
+  role?: string;
+};
 
 function field(form: FormData, name: string) {
   const value = form.get(name);
@@ -22,12 +30,25 @@ function credentials(form: FormData) {
 
 export async function register(_state: AuthState, form: FormData): Promise<AuthState> {
   const { email, password, error: validationError } = credentials(form);
-  if (validationError) return { error: validationError, email };
+  const fullName = field(form, "fullName").trim();
+  const language = field(form, "language");
+  const role = field(form, "role");
+  const profileFields = {
+    email: email.slice(0, 254),
+    fullName: fullName.slice(0, 120),
+    language: isConversationLanguage(language) ? language : undefined,
+    role: role === "visitor" || role === "volunteer" ? role : undefined,
+  };
+  if (validationError) return { ...profileFields, error: validationError };
+  if (!fullName || Array.from(fullName).length > 120 || !isConversationLanguage(language) ||
+    (role !== "visitor" && role !== "volunteer")) {
+    return { ...profileFields, error: "Enter your full name and choose a language and role." };
+  }
   if (Array.from(password).length < 8 || new TextEncoder().encode(password).length > 72) {
-    return { error: "Use at least 8 characters and no more than 72 bytes for your password.", email };
+    return { ...profileFields, error: "Use at least 8 characters and no more than 72 bytes for your password." };
   }
   if (password !== field(form, "confirmation")) {
-    return { error: "Enter the same password in both fields.", email };
+    return { ...profileFields, error: "Enter the same password in both fields." };
   }
 
   const supabase = await createClient("mutation");
@@ -35,16 +56,19 @@ export async function register(_state: AuthState, form: FormData): Promise<AuthS
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: site ? { emailRedirectTo: new URL("/auth/confirm", site).href } : undefined,
+    options: {
+      emailRedirectTo: site ? new URL("/auth/confirm", site).href : undefined,
+      data: { full_name: fullName, conversation_language: language, signup_role: role },
+    },
   });
   if (data.session) redirect("/dashboard");
   if (!error || error.code === "user_already_exists" || error.code === "email_exists") {
     return { notice: "Check your email for a confirmation link. If you already have an account, you can sign in.", email };
   }
   if (error.code === "weak_password") {
-    return { error: "Choose a stronger password that meets the account security requirements.", email };
+    return { ...profileFields, error: "Choose a stronger password that meets the account security requirements." };
   }
-  return { error: "We couldn’t create an account right now. Try again shortly.", email };
+  return { ...profileFields, error: "We couldn’t create an account right now. Try again shortly." };
 }
 
 export async function login(_state: AuthState, form: FormData): Promise<AuthState> {

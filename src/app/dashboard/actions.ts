@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getDashboardProfile } from "@/lib/auth";
-import { getVisitorConversation, isConversationId, isLanguage, isOpen, parseConversation } from "@/lib/conversations";
-import { rememberLanguage } from "@/lib/language-preference";
+import { getVisitorConversation, isConversationId, isOpen, parseConversation } from "@/lib/conversations";
+import { isConversationLanguage } from "@/lib/conversation-language";
 import { createClient } from "@/lib/supabase/server";
 
 async function visitorContext() {
@@ -15,22 +15,19 @@ async function visitorContext() {
 }
 
 export async function saveLanguage(form: FormData) {
-  const { profile } = await visitorContext();
+  const { client } = await visitorContext();
   const language = form.get("language");
-  if (!isLanguage(language)) redirect("/dashboard?notice=invalid-language");
-  await rememberLanguage(profile.public_id, language);
+  if (!isConversationLanguage(language)) redirect("/dashboard?notice=invalid-language");
+  const { error } = await client.rpc("set_initial_conversation_language", { p_language: language });
+  if (error) redirect("/dashboard?notice=invalid-language");
   redirect("/dashboard?notice=language-saved");
 }
 
-export async function startConversation(form: FormData) {
-  const { client, profile } = await visitorContext();
-  const language = form.get("language");
-  if (!isLanguage(language)) redirect("/dashboard?notice=invalid-language");
-
-  const { data, error } = await client.rpc("request_conversation", { p_language: language });
+export async function startConversation() {
+  const { client } = await visitorContext();
+  const { data, error } = await client.rpc("request_conversation");
   const created = error ? null : parseConversation(data);
   if (created) {
-    await rememberLanguage(profile.public_id, created.language);
     revalidatePath("/dashboard");
     redirect(`/dashboard/conversations/${created.id}`);
   }
